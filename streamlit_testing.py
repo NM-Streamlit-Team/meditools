@@ -18,7 +18,7 @@ with tool1_tab:
 with tool2_tab:
     st.header("Second tool header")    
 with chatGPT_tab:
-    st.header("OPENAI ChatGPT DEMO")
+    st.header("OpenAI ChatGPT Demo")
 
     # Read OpenAI API key
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
