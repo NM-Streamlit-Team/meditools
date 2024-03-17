@@ -15,6 +15,8 @@ st.set_page_config(
         page_icon="📰",
     )
 
+# Make page content larger (zoom)
+st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
 # DEFINITIONS
 spec_options = ["General Medical News", "Anesthesiology", "Cardiology", "Immunology", "Dermatology",

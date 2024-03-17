@@ -55,15 +55,6 @@ if st.session_state['authenticated']:
         raise ValueError("OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable.")
                     
 
-    def clear_session_state_except_password():
-        # Make a copy of the session_state keys
-        keys = list(st.session_state.keys())
-                
-        # Iterate over the keys
-        for key in keys:
-            # If the key is not 'password_correct', delete it from the session_state
-            if key != 'authenticated':
-                del st.session_state[key]
 
     # set up memory
     msgs = StreamlitChatMessageHistory(key = "langchain_messages")
