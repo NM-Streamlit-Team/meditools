@@ -70,3 +70,23 @@ def authenticate():
                         help_placeholder.empty()
                     else:
                         st.error("❌ Incorrect Password. Please Try Agian.")
+
+def clear_session_state_except_password():
+    # Make a copy of the session_state keys
+    keys = list(st.session_state.keys())
+            
+    # Iterate over the keys
+    for key in keys:
+        # If the key is not 'authenticated', delete it from the session_state
+        if key != 'authenticated':
+            del st.session_state[key]
+
+def clear_session_state_except_password_doctor_name():
+    # Make a copy of the session_state keys
+    keys = list(st.session_state.keys())
+            
+    # Iterate over the keys
+    for key in keys:
+        # If the key is not 'authenticated & doctor_name & name', delete it from the session_state
+        if key != 'authenticated' and key != 'Doctor_name' and key != 'name':
+            del st.session_state[key]
