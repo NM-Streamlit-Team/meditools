@@ -77,19 +77,52 @@ if st.session_state['authenticated']:
         st.markdown("Please pick *AT LEAST ONE* area of interest from the dropdown menu.")
     else: # we have valid filters, can proceed
         
-        search_queries_spec = [(f'advancements in {topic}', topic) for topic in specialization] # list of tuples containing query and that query's topic
+        search_queries_spec = [(f'{topic} + "advancements" | "updates" | "new developments" | "research"', topic) for topic in specialization] # list of tuples containing query and that query's topic
         
         if st.button("GENERATE NEWS/UPDATES"):
             try:
                 with st.spinner("Your results are being generated..."):
                     result_dict = {}
+                    
+                    # Get recency in proper format for argument
+                    if recency == 'Less than 1 week':
+                        recency_arg = 'qdr:w'
+                    elif recency == 'Less than 2 weeks':
+                        recency_arg = 'qdr:w2'
+                    elif recency == 'Less than 1 month':
+                        recency_arg = 'qdr:m'
+                    elif recency == 'Any time': # actually last 5 years
+                        recency_arg = 'qdr:y5'
+                    
                     for query,topic in search_queries_spec:
-                        search = GoogleSerperAPIWrapper(type="news",tbs="qdr:w3",serper_api_key=SERPER_KEY) # FIX DATE IN SEARCH TO MATCH BUTTON
+                        search = GoogleSerperAPIWrapper(type="news",tbs=recency_arg,serper_api_key=SERPER_KEY)
                         topic_results = search.results(query)
                         if topic not in result_dict:
                             result_dict[topic] = topic_results
-                        # ADD MESSAGE IF VERY FEW RESULTS OF ONE TOPIC WAS GENERATED
-                st.write(result_dict)
+                            
+                    # OUTPUT MESSAGE IF VERY FEW RESULTS OF ONE TOPIC WAS GENERATED
+                    lacking_topics = ""
+                    for key,dict in result_dict.items():
+                        if len(dict["news"]) < 3:
+                            lacking_topics += (key + " ")
+                            # st.write(len(dict["news"]))
+                
+                    # OUTPUT RESULTS           
+                    if lacking_topics != "":
+                        st.warning(f'PLEASE NOTE: Very few results were found for the following topics: {lacking_topics}',icon="⚠️")
+                    result_list = divide_news_topics(result_dict, num_generated) # NOTE: List items don't store the topic from which they were generated yet
+                    # st.write(result_list)
+                    
+                    for i, item in zip(range(num_generated), result_list):
+                            url_loader = UnstructuredURLLoader(urls=[item['link']])
+                            data = url_loader.load() # load the webpage data
+
+                            # Run the summarize chain (ON GPT-3.5-turbo)
+                            llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo', openai_api_key=OPENAI_API_KEY)
+                            chain = load_summarize_chain(llm, chain_type="map_reduce")
+                            summary = chain.run(data)
+
+                            st.success(f"TITLE:  {item['title']}\n\nLINK:  {item['link']}\n\nSUMMARY:  {summary}")
 
             except Exception as e:
                 st.exception(f"Exception: {e}")

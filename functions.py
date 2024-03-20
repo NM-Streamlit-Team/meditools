@@ -90,3 +90,32 @@ def clear_session_state_except_password_doctor_name():
         # If the key is not 'authenticated & doctor_name & name', delete it from the session_state
         if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name':
             del st.session_state[key]
+            
+def divide_news_topics(parent_dict, limit):
+    # Gather all news results from topics which actually have results
+    # st.write(f"parent_dict: {parent_dict}")
+    all_contents = {topic: details['news'] for topic, details in parent_dict.items() if 'news' in details}
+    topics_with_content = {topic: contents for topic, contents in all_contents.items() if contents}
+    num_topics = len(topics_with_content)
+    # st.write(f"topics_with_content: {topics_with_content}")
+    
+    # If there are no topics, return an empty list
+    if num_topics == 0:
+        st.warning("NO RESULTS WERE FOUND FOR ANY OF THE SELECTED TOPICS")
+        return []
+    
+    # Try to divide the content evenly, save remainder for later
+    base_content_per_topic, extra_content = divmod(limit, num_topics)
+    
+    # Prepare the result list
+    result_content = []
+    
+    # Distribute content
+    for index, (topic, contents) in enumerate(topics_with_content.items()):
+        # Determine how many contents to take for this topic
+        num_contents_to_take = base_content_per_topic + (1 if index < extra_content else 0)
+        
+        # Add the content to the result list, respecting the topic's available content
+        result_content.extend(contents[:num_contents_to_take])
+    
+    return result_content
