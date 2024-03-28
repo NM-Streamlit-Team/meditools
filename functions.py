@@ -117,6 +117,7 @@ def divide_news_topics(parent_dict, limit):
     num_topics = len(topics_with_content)
     # st.write(f"topics_with_content: {topics_with_content}")
     
+    
     # If there are no topics, return an empty list
     if num_topics == 0:
         st.warning("NO RESULTS WERE FOUND FOR ANY OF THE SELECTED TOPICS")
@@ -126,7 +127,7 @@ def divide_news_topics(parent_dict, limit):
     base_content_per_topic, extra_content = divmod(limit, num_topics)
     
     # Prepare the result list
-    result_content = []
+    result_content = dict()
     
     # Distribute content
     for index, (topic, contents) in enumerate(topics_with_content.items()):
@@ -134,6 +135,6 @@ def divide_news_topics(parent_dict, limit):
         num_contents_to_take = base_content_per_topic + (1 if index < extra_content else 0)
         
         # Add the content to the result list, respecting the topic's available content
-        result_content.extend(contents[:num_contents_to_take])
+        result_content[str(topic)] = contents[:num_contents_to_take]
     
     return result_content
