@@ -1,6 +1,8 @@
 import streamlit as st
 import base64
 import time
+import markdown
+import pdfkit
 
 # function to remove first two words from a string
 def remove_first_two_words(text: str) -> str:
@@ -88,9 +90,25 @@ def clear_session_state_except_password_doctor_name():
     # Iterate over the keys
     for key in keys:
         # If the key is not 'authenticated & doctor_name & name', delete it from the session_state
-        if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name':
+        if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name'and key != 'patient_name':
             del st.session_state[key]
-            
+
+
+def image_to_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+    
+# Function to convert Markdown to PDF
+def markdown_to_pdf(markdown_text):
+    # Convert Markdown to HTML
+    html_text = markdown.markdown(markdown_text)
+    
+    # Convert HTML to PDF
+    pdf = pdfkit.from_string(html_text, False)
+    
+    return pdf
+
+
 def divide_news_topics(parent_dict, limit):
     # Gather all news results from topics which actually have results
     # st.write(f"parent_dict: {parent_dict}")
