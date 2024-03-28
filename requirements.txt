@@ -95,3 +95,6 @@ watchdog==4.0.0
 wrapt==1.16.0
 yarl==1.9.3
 zipp==3.17.0
+markdown==3.6
+pdfkit==1.0.0
+langchain-openai==0.1.0
