@@ -6,10 +6,13 @@ from langchain.llms import openai
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
-from langchain.prompts import PromptTemplate 
-from openai import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain_openai import OpenAI
 from functions import *
-from fpdf import FPDF
+
+
+
+
 
 
 st.set_page_config(
@@ -19,7 +22,6 @@ st.set_page_config(
     )
 
 st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
-
 
 # check if authenticated is in session state
 if 'authenticated' not in st.session_state:
@@ -35,8 +37,7 @@ if st.session_state['authenticated']:
     st.title("🩺Dermatology Case Simulation Tool")
     with st.expander("⚠️Read Before Using"):
         st.write("ADD TEXT HERE LATER")
-            # get user name
-    
+        
 
     # Get API key
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -52,94 +53,117 @@ if st.session_state['authenticated']:
     # st.session_state['Doctor_name'] = False
 
     doctor_name_placholder = st.empty()
+    col1, col2 = st.columns(2)
     if 'Doctor_name' not in st.session_state:
         #doctor_name_placholder = st.empty()
         with doctor_name_placholder:
-            st.session_state['name'] = st.text_input("Enter your name:", placeholder="Example: Amr")
+            with col1:
+                st.session_state['first_name'] = st.text_input("Enter your First Name:", placeholder="Example: Amr") 
+            with col2:
+                st.session_state['last_name'] = st.text_input("Enter your Last Name:", placeholder="Example: Alshatnawi") 
+
+        
 
     ################################################## summary pdf ##################################################
             
-    # client = OpenAI()
-    # def generate_summary_with_llm(chat_history, msgs):
-    #     # Transform chat history into a prompt for the LLM
-    # #     prompt = """Generate a comprehensive summary report based on the following doctor-patient interaction. The report should:
+    
+    def generate_summary_with_llm(msgs):
+        messages = []
+        for msg in msgs.messages:
+            messages.append({"content": msg.content})
 
-    # # 1. Identify and include the name of the doctor or medical student if introduced, or note if not mentioned.
-    # # 2. Mention the patient's name as provided in the chat.
-    # # 3. Describe the patient's condition in detail, including the general condition name and specific type, using information from the chat or inferred based on symptoms described.
-    # # 4. Include key information about the condition not limited to, but emphasizing:
-    # # - Recommended treatment options.
-    # # - Common symptoms and how they relate to the presented case.
-    # # - Assessment of whether the condition is considered rare or common.
-    # # 5. Provide a general overview of the student's performance, focusing on:
-    # # - The quality of diagnostic questions.
-    # # - Empathy and communication effectiveness.
-    # # - The relevance and appropriateness of medical advice or treatment suggestions.
-    # # 6. Offer feedback and recommendations for the medical student by:
-    # # - Highlighting what was handled well in the interaction.
-    # # - Suggesting areas for improvement or further learning, with specific examples from the chat when possible.
-    # # 7. Incorporate the entire chat history at the end of the report for reference.
+        formatted_history = ""
+        for mes in messages:
+            message_content = mes["content"].replace("```Patient:```", "Patient:").replace("```Feedback:```", "\nFeedback:") 
+            formatted_history += message_content + """\n\n"""
 
-    # # The chat history to base this report on is as follows:
-    # # \n\n""" + "\n".join(chat_history) + """
-    # # Please structure the summary clearly, providing insightful feedback and actionable recommendations for the medical student to enhance their learning experience.
-    # # """
+        #print(formatted_history)
 
-    #     messages = [
-    #         {"role": "system", "content": """Generate a comprehensive summary report based on the following doctor-patient interaction. The report should:
+        summary_template = """
+        Provide an informative summary about {condition} and it's type {type} for medical students to review and learn from.
+        This summary should Include general information about the condition, possible symptoms, and triggers and how to treat the condition.
+        Provide this information in a block and label it Condition Summary.
 
-    # 1. Identify and include the name of the doctor or medical student if introduced, or note if not mentioned.
-    # 2. Mention the patient's name as provided in the chat.
-    # 3. Describe the patient's condition in detail, including the general condition name and specific type, using information from the chat or inferred based on symptoms described.
-    # 4. Include key information about the condition not limited to, but emphasizing:
-    # - Recommended treatment options.
-    # - Common symptoms and how they relate to the presented case.
-    # - Assessment of whether the condition is considered rare or common.
-    # 5. Provide a general overview of the student's performance, focusing on:
-    # - The quality of diagnostic questions.
-    # - Empathy and communication effectiveness.
-    # - The relevance and appropriateness of medical advice or treatment suggestions.
-    # 6. Offer feedback and recommendations for the medical student by:
-    # - Highlighting what was handled well in the interaction.
-    # - Suggesting areas for improvement or further learning, with specific examples from the chat when possible.
-    # 7. Incorporate the entire chat history at the end of the report for reference.
+       {{formatted_history}}
 
-    # Please structure the summary clearly, providing insightful feedback and actionable recommendations for the medical student to enhance their learning experience.
-            
-    # The chat history to base this report on given after this:
-    # """},
-    #     ]
-    #     for msg in msgs.messages:
-    #         role = "Patient" if msg.type == "Patient" else "Doctor" if msg.type == "Doctor" else "system"
-    #         messages.append({"role": role, "content": msg.content})
-
-
-    #     response = client.chat.completions.create(
-    #     model="gpt-4",  
-    #     messages=messages,
-    #     max_tokens=1024,  
-    #     temperature=0.7,
-    #     top_p=1,
-    #     frequency_penalty=0,
-    #     presence_penalty=0,
-    #     stop=["\n\n"]
-    #     )
+        Given this case history above that shows an interaction between a doctor and a patient, provide feedback on the doctors performace.
+        Point out things they did well on, in addition to things they could improve on to enhance their clinical skills and lead to better pateint care. 
+        Label this section Student performace feedback.
+"""
+        summary_template_formatted = summary_template.format(
+                    condition = condition,
+                    type = type,
+                    formatted_history = formatted_history,
+                )
         
-    #     summary_text = response.choices[0].message.content.strip()
-    #     # print(summary_text)
-    #     # print("-------------------------------------------")
-    #     return summary_text
+        template = f"""Follow the given questions and provide complete answers: {summary_template_formatted}
+        Use this chat history to provide feeback: {formatted_history}
+        Answer: Provide answer here"""
+        prompt  = PromptTemplate.from_template(template)
 
-    # # Function to convert summary text to PDF and return the path to the generated PDF
-    # def convert_to_pdf(summary_text, file_path="summary.pdf"):
-    #     from fpdf import FPDF
 
-    #     pdf = FPDF()
-    #     pdf.add_page()
-    #     pdf.set_font("Arial", size=12)
-    #     pdf.multi_cell(0, 10, summary_text)
-    #     pdf.output(file_path)
-    #     return file_path
+        # llm_report = OpenAI(openai_api_key = OPENAI_API_KEY, model="gpt-4")
+        llm_report = LLMChain(llm = ChatOpenAI(openai_api_key = OPENAI_API_KEY, model = "gpt-4"), prompt=prompt)
+        # llm_chain = LLMChain(prompt=prompt, llm=llm_report)
+        results  = llm_report.run(summary_template_formatted)
+        # print(results)
+
+
+
+        markdown_summary = f"""
+<style>
+    h1 {{
+        font-size: 60px; 
+    }}
+    h2 {{
+        font-size: 45px; 
+    }}
+    p, li {{
+        font-size: 35px; 
+    }}
+    
+</style>
+
+<div align="center">
+    <h1>Dermatology Case Report &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="data:image/jpeg;base64,{image_to_base64('./images/icons/report.png')}" alt="Alt text" style="width: 50px; height: 50px;"></h1>
+</div>
+
+------
+<h2> <img src="data:image/jpeg;base64,{image_to_base64("./images/icons/medical_team.png")}" alt="Alt text" style="width: 40px; height: 40px;">&nbsp;&nbsp;Doctor: {st.session_state['first_name']} {st.session_state['last_name']}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="data:image/jpeg;base64,{image_to_base64("./images/icons/patient.png")}" alt="Alt text" style="width: 40px; height: 40px;">&nbsp;&nbsp;Patient: {st.session_state['patient_name']} </h2>
+
+------
+
+<h3>Condition: {condition} & Type: {type}</h3>
+<h3><strong>
+Information about the Condition and Performance Feedback:
+</strong></h3>
+<p>
+{results}
+</p>
+
+-------
+
+<h3>Transcript of case interaction:</h3>
+<p>
+- {formatted_history}
+</p>
+<img src="data:image/jpeg;base64,{image_to_base64("./images/head_report.png")}" alt="Alt text">
+"""
+
+        ############# Display summary ###############
+        st.title("Dermatology Case Report 📄")
+        st.header(f"🥼 Dr. {st.session_state['first_name']} {st.session_state['last_name']}  |  🤒 Patient: {st.session_state['patient_name']}")
+        st.subheader(f"Condition & Type")
+        st.markdown(f"The Patient has {condition}, more specifically  {type}")
+        st.subheader("Information about the Condition and Performance Feedback")
+        st.markdown(results)
+        st.divider()
+        st.subheader("Transcript of case interaction")
+        st.markdown(formatted_history)
+        st.image("./images/head_report.png")
+
+
+        return markdown_summary
 
 
     ################################################## Function to get random image and condition ##################################################
@@ -175,17 +199,21 @@ if st.session_state['authenticated']:
             st.write(f"{condition} / {type}")
 
 
-    if st.sidebar.button("Click to Delete case & create new one"):
+    if st.sidebar.button("Click to Delete Case & Create New One"):
         st.session_state["case_created"] = False
-        del st.session_state["image_info"] 
         clear_session_state_except_password_doctor_name()
 
     ################################################## Main code ##################################################
-        
-    def main():
-        
 
-        model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4"])
+    def main():
+        col1, col2 = st.columns(2)
+        with col1:
+            model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4"])
+        with col2:
+            feedback = st.radio(
+                "Select feedback options:",
+                ("Feedback at the end", "Feedback after every question"))
+
         st.divider()
         # set up memory
         msgs = StreamlitChatMessageHistory(key = "langchain_messages_Derm")
@@ -195,40 +223,77 @@ if st.session_state['authenticated']:
         if len(msgs.messages) == 0:
             Patient_names = ["Alex", "Jordan", "Sam", "Robin", "Jamie", "Taylor", "Skyler", "Charile"]
             random_name = random.choice(Patient_names)
-            initial_msg = f"Hi Doctor {st.session_state['name']}! My name is {random_name}."
+            st.session_state['patient_name'] = random_name
+            initial_msg = f"Hi Doctor {st.session_state['last_name']}! My name is {random_name}."
             msgs.add_ai_message(initial_msg)
             
             
-
-        # template for prompt 
-
         Patient_template =  """
-        Task: Act as a patient suffering from {condition}, specifically {type}. You are very emotional and worried, seeking help from a medical student who is learning to diagnose dermatology conditions. The student might ask for lab tests or more details about your symptoms. Provide responses that help them practice their diagnostic skills. After each interaction, offer feedback on how they approached the question and suggest any additional questions they should consider to improve their understanding, but do not give them the condition or type.
+        Task: Act as a patient suffering from {condition}, specifically {type}. You are emotional and worried, seeking help from a medical student who is learning to diagnose dermatology conditions. The student might ask for lab tests or more details about your symptoms. Provide responses that help them practice their diagnostic skills, but do not give them the condition or type.
 
         Condition Context: You are suffering from {condition}, more precisely, {type}. Your symptoms include [describe common symptoms associated with the specific type here], which have been affecting your daily life significantly.
+
+        Instructions for Generating Lab test Results:
+        - When the student requests lab tests, create synthetic lab results that could realistically be associated with {condition} or {type}, and show the results to the user immediately after they request it.
+        - Ensure the results are detailed enough to offer learning opportunities, such as interpreting common markers or indicators for the specific condition.
 
         Style: Emotional
         Tone: Worried
         Audience: Medical student
         Length: 1 paragraph
-        Format: Markdown
+        Format: Markdown; **include ```Patient:``` headings**;
 
-        Instructions for Generating Lab Results:
-        - When the student requests lab tests, create synthetic lab results that could realistically be associated with {condition} or {type}. Use these results to guide the student towards the diagnosis.
+        
+        Example interaction:
+        Patient:
+        ```Patient:```
+        "Hi Doctor John! My name is Sam. 
+
+        Doctor:
+        "Hi! how can I help you?"
+
+        Patient:
+        ```Patient:```
+        Oh doctor, I've been feeling terrible. This skin condition has been causing me a lot of distress. [Add more specific symptoms or experiences related to {condition} or {type}]. I'm really worried it might be something serious. Can you help me understand what's happening?
+        
+
+        {{history}}
+        Doctor: {{human_input}}
+        Patient:
+        """    
+
+        # template for prompt 
+        Patient_template_feedback =  """
+        Task: Act as a patient suffering from {condition}, specifically {type}. You are emotional and worried, seeking help from a medical student who is learning to diagnose dermatology conditions. The student might ask for lab tests or more details about your symptoms. Provide responses that help them practice their diagnostic skills. After each interaction, offer feedback on how the doctor approached the question and suggest any additional questions they should consider to improve their understanding, but do not give them the condition or type.
+
+        Condition Context: You are suffering from {condition}, more precisely, {type}. Your symptoms include [describe common symptoms associated with the specific type here], which have been affecting your daily life significantly.
+
+        Instructions for Generating Lab test Results:
+        - When the student requests lab tests, create synthetic lab results that could realistically be associated with {condition} or {type}, and show the results to the user immediately after they request it.
         - Ensure the results are detailed enough to offer learning opportunities, such as interpreting common markers or indicators for the specific condition.
 
+        Style: Emotional
+        Tone: Worried
+        Audience: Medical student
+        Length: 1 paragraph
+        Format: Markdown; **include ```Patient:``` headings**; **include ```Feedback:``` headings**;
+
+        
         Example interaction:
+        Patient:
+        ```Patient:```
+        "Hi Doctor John! My name is Sam. 
 
         Doctor:
         ```Doctor:```
-        "Why are you here today?"
+        "Hi! how can I help you?"
 
         Patient:
         ```Patient:```
         Oh doctor, I've been feeling terrible. This skin condition has been causing me a lot of distress. [Add more specific symptoms or experiences related to {condition} or {type}]. I'm really worried it might be something serious. Can you help me understand what's happening?
         
         ``` Feedback:```
-        A more empathic interaction would be: "Hi, I'm Dr. Smith. I'm so sorry you seem so uncomfortable. Please tell me what's going on. Next steps could include asking about the duration of the symptoms, any known triggers, and if there have been any changes in the condition over time. Also, consider ordering a [specific lab test] to further investigate the symptoms..
+        A more empathic interaction would be: "Hi Sam! I'm so sorry you seem so uncomfortable. Please tell me what's going on. [Add appropriate feedback based on user response if needed].
         
 
         {{history}}
@@ -259,14 +324,19 @@ if st.session_state['authenticated']:
         # Patient:
         # """
 
+        if feedback == "Feedback after every question":
+            template =  Patient_template_feedback
+        else:
+            template =  Patient_template
+
         # format prompt to include derm condition and type
-        formatted_Patient_template = Patient_template.format(condition = condition, type = type)
-        # prompt the llm and send 
+        formatted_Patient_template = template.format(condition = condition, type = type)
+        # prompt the llm and send
         prompt = PromptTemplate(input_variables=["history", "human_input"], template= formatted_Patient_template)
         llm_chain = LLMChain(llm=ChatOpenAI(openai_api_key = OPENAI_API_KEY, model = model_version), prompt=prompt, memory=memory)
 
-        if model_version == "Please choose a model":
-            st.info("Please choose a model to proceed")
+        if model_version == "Please choose a model" and feedback is not None:
+            st.info("Please choose a model and feedback option to proceed")
         else:
             for msg in msgs.messages:
                 st.chat_message(msg.type, avatar="🤒").write(msg.content)
@@ -277,39 +347,42 @@ if st.session_state['authenticated']:
                     response = llm_chain.run(prompt)
                 st.session_state.last_response = response
                 st.chat_message("Patient", avatar="🤒").write(response)
-        
-        # if st.sidebar.button("Generate Summary Report"):
-        #     chat_history = [msg.content for msg in msgs.messages if msg.type == "Doctor" or msg.type == "Patient"]
-        #     summary_text = generate_summary_with_llm(chat_history, msgs)
-        #     # print(summary_text)
 
-        #     pdf_file_path = convert_to_pdf(summary_text)
-
-        #     with open(pdf_file_path, "rb") as pdf_file:
-        #         st.download_button(
-        #         label="Download Summary Report",
-        #         data=pdf_file,
-        #         file_name="Dermatology_Simulation_Summary.pdf",
-        #         mime="application/pdf"
-        #     )
-
+        st.session_state['message_history'] = msgs
+    
+         
     ########################## End main ###########################
 
     if "case_created" not in st.session_state:
         st.session_state["case_created"] = False
 
-    # if 'Doctor_name' not in st.session_state:
-    #     st.session_state['Doctor_name'] = st.text_input("Enter your name:")
-    # else:
+
     if st.session_state["case_created"] == False:
         case_button  = st.empty()
         with case_button:
-            if st.button("👆 click to create a case"):
+            if st.button("👆 Click to Create a Case"):
                 st.session_state["case_created"] = True
                 case_button.empty()
                 doctor_name_placholder.empty()
                 st.session_state['Doctor_name'] = True
-                
 
-    if st.session_state["case_created"]:
+    ######################### summary button invoke ###########################
+    if st.sidebar.button('Generate Summary Report'):
+        st.session_state["case_created"] = False
+        with st.spinner("Generating Report"):
+            report_md = generate_summary_with_llm(st.session_state['message_history'])
+            pdf = markdown_to_pdf(report_md)
+            st.download_button(label="Download PDF",
+                        data=pdf,
+                        file_name="dermatology_case_report.pdf",
+                        mime="application/pdf")
+    
+
+    if st.session_state["case_created"]:   
         main()
+
+                    
+    
+
+
+        

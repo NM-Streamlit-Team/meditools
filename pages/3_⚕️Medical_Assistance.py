@@ -46,7 +46,7 @@ if st.session_state['authenticated']:
         # Dropdown menu for model selection
         model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4"])
     with col2:
-        st.image("nova_image.png", width=250)
+        st.image("images/nova_image.png", width=250)
                 
     # Get API key
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
