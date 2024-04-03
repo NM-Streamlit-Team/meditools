@@ -8,6 +8,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
 from functions import *
+from PIL import Image
 
 
 
@@ -17,9 +18,19 @@ from functions import *
 st.set_page_config(
         page_title="Dermatology Patient Simulation",
         page_icon="🩺",
-        #layout="wide"
+        # layout="wide" # Makes it too wide, would need to reformat things to fit in two columns perhaps
     )
-
+# REMOVES WHITESPACE PADDING AT TOP AND BOTTOM, ADJUST AS NEEDED
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 0rem;
+                    padding-bottom: 1rem;
+                    padding-left: 0rem;
+                    padding-right: 0rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
 st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
 # check if authenticated is in session state
@@ -33,10 +44,7 @@ if not st.session_state['authenticated']:
 # Show page if user is authenticated
 if st.session_state['authenticated']:
 
-    st.title("🩺Dermatology Case Simulation Tool")
-    with st.expander("⚠️Read Before Using"):
-        st.write("ADD TEXT HERE LATER")
-        
+    st.title("🩺Dermatology Case Simulation Tool")   
 
     # Get API key
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -192,10 +200,8 @@ Information about the Condition and Performance Feedback:
     # get image info 
     condition, type, image_path = st.session_state['image_info']
 
-    with st.sidebar.expander("🖼️ Click to View Condition image"):
-        st.image(image_path)
-        if st.button("Click to see Condition and Type"):
-            st.write(f"{condition} / {type}")
+    with st.sidebar.expander("FOR TESTING: See Condition and Type"):
+        st.write(f"{condition} / {type}")
 
 
     if st.sidebar.button("Click to Delete Case & Create New One"):
@@ -205,14 +211,23 @@ Information about the Condition and Performance Feedback:
     ################################################## Main code ##################################################
 
     def main():
-        col1, col2 = st.columns(2)
-        with col1:
-            model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4"])
-        with col2:
-            feedback = st.radio(
-                "Select feedback options:",
-                ("Feedback at the end", "Feedback after every question"))
+        # Warning message and setup params while model not chosen:
+        if 'model_feedback_expanded' not in st.session_state:
+            st.session_state['model_feedback_expanded'] = True
+        with st.expander("Model and Feedback Settings",expanded=st.session_state["model_feedback_expanded"]):
+            col1, col2 = st.columns(2)
+            with col1:
+                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4"])
+            with col2:
+                feedback = st.radio(
+                    "Select feedback options:",
+                    ("Feedback at the end", "Feedback after every question"))
+            
 
+        # Show image at top of page, above the interaction window
+        cond_img = Image.open(image_path)
+        resized_cond_img = cond_img.resize((700,400))
+        st.image(resized_cond_img)
         st.divider()
         # set up memory
         msgs = StreamlitChatMessageHistory(key = "langchain_messages_Derm")
@@ -337,6 +352,7 @@ Information about the Condition and Performance Feedback:
         if model_version == "Please choose a model" and feedback is not None:
             st.info("Please choose a model and feedback option to proceed")
         else:
+            st.session_state["model_feedback_expanded"] = False
             for msg in msgs.messages:
                 st.chat_message(msg.type, avatar="🤒").write(msg.content)
 
