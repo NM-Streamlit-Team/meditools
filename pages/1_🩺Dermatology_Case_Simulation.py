@@ -9,7 +9,7 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
 from functions import *
 from PIL import Image
-
+from thefuzz import fuzz, process
 
 
 
@@ -21,16 +21,16 @@ st.set_page_config(
         # layout="wide" # Makes it too wide, would need to reformat things to fit in two columns perhaps
     )
 # REMOVES WHITESPACE PADDING AT TOP AND BOTTOM, ADJUST AS NEEDED
-st.markdown("""
-        <style>
-               .block-container {
-                    padding-top: 0rem;
-                    padding-bottom: 1rem;
-                    padding-left: 0rem;
-                    padding-right: 0rem;
-                }
-        </style>
-        """, unsafe_allow_html=True)
+# st.markdown("""      # THIS BREAKS THE CHATBOX AND COVERS CONTENT WITH THE INPUT WIDGET
+#         <style>
+#                .block-container {
+#                     padding-top: 3rem;
+#                     padding-bottom: 3rem;
+#                     padding-left: 0rem;
+#                     padding-right: 0rem;
+#                 }
+#         </style>
+#         """, unsafe_allow_html=True)
 st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
 # check if authenticated is in session state
@@ -227,7 +227,8 @@ Information about the Condition and Performance Feedback:
         # Show image at top of page, above the interaction window
         cond_img = Image.open(image_path)
         resized_cond_img = cond_img.resize((700,400))
-        st.image(resized_cond_img)
+        with st.expander("Patient Image",expanded=True):  
+            st.image(resized_cond_img) # Likely don't need resized anymore now that it's in a container
         st.divider()
         # set up memory
         msgs = StreamlitChatMessageHistory(key = "langchain_messages_Derm")
@@ -365,14 +366,19 @@ Information about the Condition and Performance Feedback:
 
         st.session_state['message_history'] = msgs
     
+        if st.button("I'M READY TO MAKE MY DIAGNOSIS",use_container_width=True):
+            st.session_state["end_interact"] = True
          
     ########################## End main ###########################
 
     if "case_created" not in st.session_state:
         st.session_state["case_created"] = False
+        
+    if "end_interact" not in st.session_state:
+        st.session_state["end_interact"] = False
 
 
-    if st.session_state["case_created"] == False:
+    if (st.session_state["case_created"] == False) and (st.session_state["end_interact"] == False):
         case_button  = st.empty()
         with case_button:
             if st.button("👆 Click to Create a Case"):
@@ -392,6 +398,29 @@ Information about the Condition and Performance Feedback:
                         file_name="dermatology_case_report.pdf",
                         mime="application/pdf")
     
+    ######################### End interaction / submit diagnosis invoke ###########################
+    if st.session_state["end_interact"]:
+        st.session_state["case_created"] = False # Shuts down main interaction panel, NOTE: ADD A WAY TO GO BACK
+        user_guess = st.text_input(
+            "What condition do you think your patient was exhibiting? :mag:",
+            max_chars=50,
+            key="user_guess",
+            value=None,
+            help="Try to be as specific as possible. For example, writing 'Rhinophyma' instead of simply 'Rosacea'."
+        )
+        # fuzzy string matching
+        if user_guess:
+            cond_type = condition + " " + type
+            tok_set_ratio = fuzz.token_set_ratio(cond_type, user_guess)
+            st.write("THE FUZZ RATIO IS: ", tok_set_ratio)
+            
+        if st.button("get me out"):
+            st.session_state["end_interact"] = False
+        
+        # Determine if guess was correct and output result
+        
+        # Add ability to generate report here (too?)
+
 
     if st.session_state["case_created"]:   
         main()
