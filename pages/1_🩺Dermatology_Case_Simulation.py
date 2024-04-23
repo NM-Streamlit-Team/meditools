@@ -217,7 +217,7 @@ Information about the Condition and Performance Feedback:
         with st.expander("Model and Feedback Settings",expanded=st.session_state["model_feedback_expanded"]):
             col1, col2 = st.columns(2)
             with col1:
-                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4"])
+                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo-2024-04-09"])
             with col2:
                 feedback = st.radio(
                     "Select feedback options:",
@@ -410,12 +410,61 @@ Information about the Condition and Performance Feedback:
         )
         # fuzzy string matching
         if user_guess:
+            
             cond_type = condition + " " + type
             tok_set_ratio = fuzz.token_set_ratio(cond_type, user_guess)
-            st.write("THE FUZZ RATIO IS: ", tok_set_ratio)
+            # st.write("THE FUZZ RATIO IS: ", tok_set_ratio) # Comment out later, also consider using a non fuzzy approach
+            
+            placeholder = st.empty()
+            if tok_set_ratio >= 70: # Consider this a 'match'
+                with placeholder.container():
+                    st.markdown(f"""
+                                ## Your Guess: :blue[{user_guess}]
+                                
+                                ## The Patient's Condition: :blue[{condition}], specifically :blue[{type}]
+                                
+                                # :green[Nice Work!]  \n
+                                #
+                                ### You can now repeat the same scenario, get feedback on your last interaction, or try a new case!
+                                #
+                                #
+                                """)
+            else:
+                with placeholder.container():
+                    st.markdown(f"""
+                                ## Sorry! You guessed: :red[{user_guess}]
+                                
+                                ## The patient was really exhibiting :blue[{condition}], specifically :blue[{type}]
+                                #
+                                ### You can now repeat the same scenario, get feedback on your last interaction, or try a new case!
+                                #
+                                #
+                                """)
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                repeat_scenario_button = st.button("Repeat the Previous Scenario",use_container_width=True)
+            with col2:
+                get_feedback_button = st.button("Get Feedback",use_container_width=True)
+            with col3:
+                repeat_scenario_button = st.button("Generate a New Case",use_container_width=True)
+                
+            # GENERATE SUMMARY REPORT / FEEDBACK
+            if get_feedback_button:
+                placeholder.empty()
+                # st.session_state["end_interact"] = False # These also make get me out button dissapear, but not the 3 column buttons
+                # st.session_state["case_created"] = False
+                with st.spinner("Generating Report"):
+                    report_md = generate_summary_with_llm(st.session_state['message_history'])
+                    pdf = markdown_to_pdf(report_md)
+                    st.download_button(label="Download PDF",
+                                data=pdf,
+                                file_name="dermatology_case_report.pdf",
+                                mime="application/pdf")
             
         if st.button("get me out"):
             st.session_state["end_interact"] = False
+            st.session_state["case_created"] = False
         
         # Determine if guess was correct and output result
         
