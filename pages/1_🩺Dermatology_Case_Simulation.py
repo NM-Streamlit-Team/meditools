@@ -364,12 +364,14 @@ Information about the Condition and Performance Feedback:
                 st.session_state.last_response = response
                 st.chat_message("Patient", avatar="🤒").write(response)
 
+            st.button("I'M READY TO MAKE MY DIAGNOSIS",use_container_width=True, on_click=end_interact_callbck)
+            
         st.session_state['message_history'] = msgs
-    
-        if st.button("I'M READY TO MAKE MY DIAGNOSIS",use_container_width=True):
-            st.session_state["end_interact"] = True
+
          
     ########################## End main ###########################
+    if "remove_guess" not in st.session_state:
+        st.session_state["remove_guess"] = False
 
     if "case_created" not in st.session_state:
         st.session_state["case_created"] = False
@@ -381,7 +383,7 @@ Information about the Condition and Performance Feedback:
     if (st.session_state["case_created"] == False) and (st.session_state["end_interact"] == False):
         case_button  = st.empty()
         with case_button:
-            if st.button("👆 Click to Create a Case"):
+            if st.button("👆 Click to Create a Case",use_container_width=True):
                 st.session_state["case_created"] = True
                 case_button.empty()
                 doctor_name_placholder.empty()
@@ -398,15 +400,18 @@ Information about the Condition and Performance Feedback:
                         file_name="dermatology_case_report.pdf",
                         mime="application/pdf")
     
-    ######################### End interaction / submit diagnosis invoke ###########################
-    if st.session_state["end_interact"]:
+    ######################### post_interact() ###########################
+    def post_interact():
+        st.session_state["remove_guess_field"] = False
         st.session_state["case_created"] = False # Shuts down main interaction panel, NOTE: ADD A WAY TO GO BACK
+          
         user_guess = st.text_input(
             "What condition do you think your patient was exhibiting? :mag:",
             max_chars=50,
             key="user_guess",
             value=None,
-            help="Try to be as specific as possible. For example, writing 'Rhinophyma' instead of simply 'Rosacea'."
+            help="Try to be as specific as possible. For example, writing 'Rhinophyma' instead of simply 'Rosacea'.",
+            disabled=st.session_state["remove_guess"]
         )
         # fuzzy string matching
         if user_guess:
@@ -445,16 +450,16 @@ Information about the Condition and Performance Feedback:
             with col1:
                 repeat_scenario_button = st.button("Repeat the Previous Scenario",use_container_width=True)
             with col2:
-                get_feedback_button = st.button("Get Feedback",use_container_width=True)
+                get_feedback_button = st.button("Get Feedback",use_container_width=True,on_click=guess_text_callbck)
             with col3:
-                repeat_scenario_button = st.button("Generate a New Case",use_container_width=True)
+                new_case_button = st.button("Generate a New Case",use_container_width=True,on_click=master_reset_callbck)
                 
             # GENERATE SUMMARY REPORT / FEEDBACK
             if get_feedback_button:
                 placeholder.empty()
-                # st.session_state["end_interact"] = False # These also make get me out button dissapear, but not the 3 column buttons
+                # st.session_state["end_interact"] = False # this makes get me out button dissapear, but not the 3 column buttons
                 # st.session_state["case_created"] = False
-                with st.spinner("Generating Report"):
+                with st.spinner("Generating Report"): # SLOW - FIND WAY TO STORE IF ALREADY GENERATED
                     report_md = generate_summary_with_llm(st.session_state['message_history'])
                     pdf = markdown_to_pdf(report_md)
                     st.download_button(label="Download PDF",
@@ -462,18 +467,22 @@ Information about the Condition and Performance Feedback:
                                 file_name="dermatology_case_report.pdf",
                                 mime="application/pdf")
             
-        if st.button("get me out"):
-            st.session_state["end_interact"] = False
-            st.session_state["case_created"] = False
+            # RESET THE INTERACTION AND REPEAT THE SAME SCENARIO -> See Button Callback     
+            if repeat_scenario_button: 
+                placeholder.empty()
+                
+            # RESET THE INTERACTION AND CREATE A NEW CASE -> See Button Callback  
+            if new_case_button:
+                placeholder.empty()
+                
         
-        # Determine if guess was correct and output result
-        
-        # Add ability to generate report here (too?)
-
+    ################### END post_interact() ################
 
     if st.session_state["case_created"]:   
         main()
 
+    if st.session_state["end_interact"]:
+        post_interact()
                     
     
 

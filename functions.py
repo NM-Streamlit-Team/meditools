@@ -138,3 +138,17 @@ def divide_news_topics(parent_dict, limit):
         result_content[str(topic)] = contents[:num_contents_to_take]
     
     return result_content
+
+
+
+### CALLBACK FUNCTIONS ###
+
+def guess_text_callbck():
+    st.session_state["remove_guess"] = True
+    
+def end_interact_callbck():
+    st.session_state["end_interact"] = True
+    
+def master_reset_callbck():
+    guess_text_callbck()
+    clear_session_state_except_password_doctor_name()
