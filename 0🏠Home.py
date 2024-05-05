@@ -9,8 +9,9 @@ from sendgrid.helpers.mail import Mail, Email, To, TemplateId, Personalization
 st.set_page_config(page_title='MediTools', layout = 'centered', page_icon = ':stethoscope:', initial_sidebar_state = 'auto')
 st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
-
+# video path from dropbox
 video_path = "https://dl.dropboxusercontent.com/scl/fi/gy9w12c85ivtg9itbimg3/MediTools.mp4?rlkey=di01s1pmjzzhdzycqjzpbvpup&st=d4zfq6m8&dl=0"
+
 # Embed the video with autoplay and loop
 video_html = f'''
 <style>
@@ -27,16 +28,14 @@ video_html = f'''
 '''
 st.markdown(video_html, unsafe_allow_html=True)
 
-
-
 with st.expander("⚠️Please read before using"):
     st.write("This app contains a collection of prototype medical education tools, powered by LLMs and AI. All information provided by the tools herein is for training purposes only and should not be taken as pure fact.")
     st.write("Authors: Remi Sampaleanu, Amr Alshatnawi, Dr. David Liebovitz")
 
 st.divider()
-
 st.subheader("👋 Welcome to MediTools")
 
+# Tools Info
 st.markdown("""
             At MediTools, we harness the power of cutting-edge language models to transform medical education.
             Our tools are designed to provide interactive learning experiences and up-to-date medical information,
@@ -62,6 +61,7 @@ st.markdown("Discover how MediTools can enhance your medical learning journey to
 
 st.divider()
 
+# Team Intros
 st.subheader('Meet the Team')
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -101,25 +101,30 @@ with col3:
 
 st.divider()
 
+ #Get sendergrid API
 sendgrid_api_key = st.secrets['sendgrid_API_Key']
 
-# Email settings
+# Email settings to get the content fo the message
 def send_to_help_email(user_name, user_email, message):
+
     sg = SendGridAPIClient(sendgrid_api_key)
 
     formatted_message = message.replace('\n', '<br>')
     email_content = f"<strong>From:</strong> {user_name} &lt;{user_email}&gt;<br><strong>Message:</strong><br>{formatted_message}"
     email = Mail(
-        from_email='no.reply.meditools@outlook.com',  # This should be a verified sender
+        # This should be a verified sender on sendergrid/ can be used for anonymity in the future
+        from_email='no.reply.meditools@outlook.com',  
         to_emails='help.meditools@outlook.com',
         subject=f'Feedback/Inquiry from {user_name}',
         html_content=email_content
     )
-    email.reply_to = user_email  # Set reply-to to user's email
+    # Set reply-to to user's email (#broken)
+    email.reply_to = user_email  
 
     response = sg.send(email)
     return response
 
+# Send the user a confirmation email with built template
 def send_confirmation_email(user_email):
     sg = SendGridAPIClient(sendgrid_api_key)
     message = Mail(
@@ -127,9 +132,10 @@ def send_confirmation_email(user_email):
         to_emails=user_email,
     )
 
+    # Load email template 
     message.template_id = TemplateId(st.secrets['sendgrid_template_ID'])
 
-    # Add dynamic template data directly to the Mail object
+    # Add dynamic template data directly to the Mail object(optional)
     message.dynamic_template_data = {
         "feedback_received": "We have received your feedback"
     }
@@ -140,12 +146,15 @@ st.subheader("📩 Contact US & Provide Feedback")
 
 # Streamlit form for feedback
 
-# Initialize session state
+# Initialize session state for fcontact form
 if 'form_submitted' not in st.session_state:
     st.session_state['form_submitted'] = False
-    
+
+# Placeholders for form and messages
 form_placeholder = st.empty()
 message_placeholder = st.empty()
+
+# Contact Form 
 with form_placeholder.form("feedback_form"):
     st.markdown("We are always happy to hear your feedback or suggestions. Please don't hesitate to contact us!")
     name = st.text_input("**Name**", placeholder="John Doe")
@@ -155,13 +164,17 @@ with form_placeholder.form("feedback_form"):
     submitted = st.form_submit_button("Send")
 
     if submitted:
+        # Check if email and message are empty
         if email == "" or message == "":
             message_placeholder.warning("Please enter your email and a message to send")
         else:
+            # send the message to email with user info
             response_help = send_to_help_email(name, email, message)
             if response_help.status_code == 202:
+                # Send the user a confirmation email
                 response_user = send_confirmation_email(email)
                 if response_user.status_code == 202:
+                    # Clear the Contact form
                     form_placeholder.empty()
                     message_placeholder.success("Thank you for your feedback! A confirmation email has been sent to you.")
                 else:
