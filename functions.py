@@ -93,6 +93,12 @@ def clear_session_state_except_password_doctor_name():
         if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name'and key != 'patient_name':
             del st.session_state[key]
 
+def clear_session_state_for_repeat():
+    keys = list(st.session_state.keys())
+    for key in keys:
+        if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name'and key != 'patient_name' and key != 'image_info':
+            del st.session_state[key]
+
 
 def image_to_base64(image_path):
     with open(image_path, "rb") as image_file:
@@ -152,3 +158,7 @@ def end_interact_callbck():
 def master_reset_callbck():
     guess_text_callbck()
     clear_session_state_except_password_doctor_name()
+    
+def repeat_interact_callbck():
+    guess_text_callbck()
+    clear_session_state_for_repeat()

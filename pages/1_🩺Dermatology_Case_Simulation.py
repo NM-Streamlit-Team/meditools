@@ -236,10 +236,16 @@ Information about the Condition and Performance Feedback:
 
         # provide an initial message
         if len(msgs.messages) == 0:
+            
+            ## ***********ADD PERSONALITY IMPLEMENTATION HERE, MAKE SURE IT IS ALSO STORED IN SESSION STATE SO REPEAT SCENARIO WORKS AS INTENDED******** ##
+            
+            ##                                                                                                                                           ##
+            
             Patient_names = ["Alex", "Jordan", "Sam", "Robin", "Jamie", "Taylor", "Skyler", "Charile"]
             random_name = random.choice(Patient_names)
-            st.session_state['patient_name'] = random_name
-            initial_msg = f"Hi Doctor {st.session_state['last_name']}! My name is {random_name}."
+            if "patient_name" not in st.session_state:
+                st.session_state['patient_name'] = random_name
+            initial_msg = f"Hi Doctor {st.session_state['last_name']}! My name is {st.session_state['patient_name']}."
             msgs.add_ai_message(initial_msg)
             
             
@@ -367,7 +373,8 @@ Information about the Condition and Performance Feedback:
             st.button("I'M READY TO MAKE MY DIAGNOSIS",use_container_width=True, on_click=end_interact_callbck)
             
         st.session_state['message_history'] = msgs
-
+        st.session_state['message_memory'] = memory
+        
          
     ########################## End main ###########################
     if "remove_guess" not in st.session_state:
@@ -448,7 +455,7 @@ Information about the Condition and Performance Feedback:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                repeat_scenario_button = st.button("Repeat the Previous Scenario",use_container_width=True)
+                repeat_scenario_button = st.button("Repeat the Previous Scenario",use_container_width=True, on_click=repeat_interact_callbck)
             with col2:
                 get_feedback_button = st.button("Get Feedback",use_container_width=True,on_click=guess_text_callbck)
             with col3:
