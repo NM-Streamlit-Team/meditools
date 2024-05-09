@@ -17,6 +17,8 @@ import pprint
 import requests
 import xml.etree.ElementTree as ET
 import datetime
+from streamlit_pdf_viewer import pdf_viewer
+import tempfile
 
 
 # set page icon and tab title
@@ -56,7 +58,7 @@ if not SERPER_KEY:
 if st.session_state['authenticated']:
 
     # define tabs
-    tabs = ["Google News 📃", "Research Papers 🤖"]
+    tabs = ["AI-Enhanced PubMed 🤖", "Google News 📃"]
     tab = st.sidebar.selectbox("👆 Select tool", tabs)
     st.sidebar.divider()
 
@@ -181,13 +183,13 @@ if st.session_state['authenticated']:
     
 
 
-    ################################################### Research Paper Tab ###################################################
+    ############################################################################################# Research Paper Tab #############################################################################################
 
-    elif tab == "Research Papers 🤖":
+    elif tab == "AI-Enhanced PubMed 🤖":
 
-        ###################### Pubmed Functions ######################
+        #################################### AI-Enhanced PubMed Functions ####################################
 
-        # get pubmed articles ids based on query
+        # Get pubmed articles ids based on query
         def search_pubmed(query, max_results=5, mindate = '', maxdate = ''):
             base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
             params = {
@@ -205,7 +207,8 @@ if st.session_state['authenticated']:
             else:
                 return []
             
-        # Fetch details about pubmed IDs, including the abstracts
+
+        # Fetch details about pubmed artciles using the IDs, including the abstracts
         def fetch_article_details_with_abstracts(pmids):
             base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
             params = {
@@ -219,6 +222,7 @@ if st.session_state['authenticated']:
             else:
                 return None
             
+
         # Parse the fetched data to extract abstract and metadata
         def parse_article_details(xml_data):
             """Parse XML data from efetch to extract details including abstracts and other metadata."""
@@ -254,55 +258,223 @@ if st.session_state['authenticated']:
                     'full_text_link': full_text_link
                 }
             return articles
+        
 
-        # Display the artcile details
-        def display_articles(articles):
-            for pmid, article in articles.items():
-                st.subheader(article['title'])
-                st.write(f"**PMID:** {pmid}")
-                st.write(f"**Authors:** {', '.join(article['authors'])}")
-                st.write(f"**Published Date:** {article['pubdate']}")
-                st.write(f"**Journal:** {article['journal']}")
-                pubmed_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
-                st.markdown(f"**PubMed:** [View on PubMed]({pubmed_url})")
-                st.write(f"**Abstract:** {article['abstract']}")
-                if article['pmcid']:
-                    st.markdown(f"**Full Text:** [Access on PMC]({article['full_text_link']})")
-                    st.button("select this paper to query with LLM", key=pmid)
-                st.markdown("---")
+        # Extract article text using diffbot
+        def extract_text_article(pmcid):
+            api_endpoint = "https://api.diffbot.com/v3/article"
+            params = {
+                'token': st.secrets['DiffBot_API_Key'],
+                'url': f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/"
+            }
+            response = requests.get(api_endpoint, params=params)
+            data = response.json()
             
-        ################################## Research tab Streamlit interface ##################################
-
-        st.title('AI-Enhanced PubMed: Query and Understand with LLMs')
-
-        with st.expander("⚠️ Important Notice on Usage"):
-                st.write("""
-        **Important Notice on Usage:** Please note that while our AI News Tool endeavors to provide accurate and up-to-date information, 
-        it relies on emerging technologies and retrieval methods that may be subject to errors. We make every effort to fact-check and verify news content, 
-        but accuracy cannot be guaranteed. Users are advised to conduct further research and 
-        fact-checking before making important decisions based on the information provided by this tool.   
-                                """)
-
-
-        # Set a default date, if necessary
-        date_today = datetime.date.today()
-        default_min_date = datetime.date(year=2015, month=1, day=1)
-        query = st.text_input("Enter your search term:", "")
-        max_results = st.sidebar.number_input("Number of results:", min_value=1, max_value=100, value=10)
-        min_date = st.sidebar.date_input("Select minimum date:", default_min_date)
-        max_date = st.sidebar.date_input("Select maximum date:", date_today)
-        if st.button("Search"):
-            if query == "":
-                st.warning("Please enter a query in the search bar")
+            if response.status_code == 200:
+                return data['objects'][0]  
             else:
-                with st.spinner("Generating results🔎"):
-                    pmids = search_pubmed(query, max_results, min_date, max_date)
-                    if pmids:
-                        xml_data = fetch_article_details_with_abstracts(pmids)
-                        if xml_data:
-                            articles = parse_article_details(xml_data)
-                            display_articles(articles)
+                return f"Error: {data['error']}"
+            
+        
+        # Display the artcile details and setup for LLM
+        def display_articles(articles):
+
+            # Dictionary to hold placeholders for each article
+            placeholders = {}  
+
+            for pmid, article in articles.items():
+                # Create a dictionary for each article's placeholders
+                placeholders[pmid] = {
+                    'title': st.empty(),
+                    'pmid': st.empty(),
+                    'authors': st.empty(),
+                    'date': st.empty(),
+                    'journal': st.empty(),
+                    'pubmed_url': st.empty(),
+                    'abstract': st.empty(),
+                    'text_link': st.empty(),
+                    'PMCID': st.empty(),
+                    'button': st.empty(),
+                    'line': st.empty()
+                }
+
+                # Display article metadata
+                placeholders[pmid]['title'].subheader(article['title'])
+                placeholders[pmid]['pmid'].write(f"**PMID:** {pmid}")
+                placeholders[pmid]['authors'].write(f"**Authors:** {', '.join(article['authors'])}")
+                placeholders[pmid]['date'].write(f"**Published Date:** {article['pubdate']}")
+                placeholders[pmid]['journal'].write(f"**Journal:** {article['journal']}")
+                pubmed_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                placeholders[pmid]['pubmed_url'].markdown(f"**PubMed:** [View on PubMed]({pubmed_url})")
+                placeholders[pmid]['abstract'].write(f"**Abstract:** {article['abstract']}")
+
+                # Check if the article is on pubmed central
+                if article['pmcid']:
+                    placeholders[pmid]['text_link'].markdown(f"**Full Text:** [Access on PMC]({article['full_text_link']})")
+                    # Button to setup for LLM
+                    if placeholders[pmid]['button'].button("select this paper to query with LLM", key=pmid):
+                        with st.spinner("🤖 Getting the LLM ready for you"):
+                            # Extract selected paper text 
+                            full_text = extract_text_article(article['pmcid'])
+                            st.session_state['full_article_text'] = full_text['text']
+                            pubmed_query.empty()
+                            pubmed_title.empty()
+                            search_button.empty()
+                            pubmed_expander.empty()
+                            st.session_state['selected_pmid'] = pmid
+                            st.session_state['selected_article'] = article
+                            st.session_state['LLM_Invoked'] = True
+                            st.subheader(f"Selected Article for LLM Query: {st.session_state['selected_article']['title']}")
+                            st.rerun()
+
+                # Line (UI) 
+                placeholders[pmid]['line'].markdown("---")
+
+                # Remove the articles if the user selects one 
+                if 'selected_pmid' in st.session_state:
+                    for article_pmid in placeholders:
+                        for key in placeholders[article_pmid]:
+                            placeholders[article_pmid][key].empty()    
+
+
+        # Setup LLM for user Interaction
+        def LLM_interaction():
+
+            # Rest tool button 
+            if st.sidebar.button("Reset Tool"):
+                clear_session_state_except_password()
+                st.rerun()
+
+            else:
+                
+                # Get selected paper metadata 
+                pmcid = st.session_state['selected_article']['pmcid']
+                title = st.session_state['selected_article']['title']
+                authors = st.session_state['selected_article']['authors']
+                journal = st.session_state['selected_article']['journal']
+
+                st.subheader(f"Selected Article for LLM Query: {title}")
+                # Select LLM
+                st.session_state['model_version_knowledge'] = st.selectbox("Choose GPT Model", ["Please choose a model", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
+                
+                # more sidebar options to provide pdf and article links
+                st.sidebar.divider()
+                st.sidebar.markdown(f"**PDF** - [Link](https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/pdf/)")
+                st.sidebar.markdown(f"**Full Text on PMC** - [Link](https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/)")
+
+                
+                # Template for prompt
+                pubmed_template = """ 
+                Task: Act as a research literature mentor, guiding users through the complexities of medical research papers. The assistant should provide insightful analyses, summarize key findings, and answer specific questions to help users grasp the intricate details and broader implications of the studies.
+                Topic: Engage in a detailed discussion of research methodologies, results, implications, and relevance to current medical practices or further research, based on the user's queries. The assistant should adeptly translate scientific jargon into easily understandable language.
+                Style: Detailed, analytical, and educational, ensuring the explanations are comprehensive yet accessible.
+                Tone: Professional, friendly, and encouraging, fostering an environment conducive to learning and inquiry.
+                Audience: Users ranging from medical professionals to students and others interested in medical research.
+                Length: 1-3 paragraphs per response
+                Format: markdown; **include ```AI Response``` headings**
+
+                Here is the content of the paper you need to answer questions about:
+                Title: {title}
+                Authors: {authors}
+                Jorunal: {journal}
+                Full text: {full_article_text}
+
+
+                Example interaction:
+
+                User: Could you summarize the methodology and key findings of the study on new migraine treatments I found in the article?
+                AI:
+                ```AI Response:```
+                The study utilized a double-blind, placebo-controlled trial to evaluate the efficacy of the new migraine treatment over a period of six months. Participants were randomly assigned to receive either the new medication or a placebo, with neither the participants nor the researchers knowing who received the actual medication. This method helps eliminate bias and increases the reliability of the results.
+
+                Key findings indicate that the treatment group experienced a significant reduction in the frequency and severity of migraine attacks compared to the placebo group. The researchers concluded that the medication could be an effective option for reducing migraine symptoms in adults. These results are promising, suggesting potential changes in therapeutic approaches for migraine sufferers.
+
+                {{history}}
+                User: {{human_input}}
+                AI: 
+                """
+                # format prompt to include input variables
+                formatted_pubmed_template = pubmed_template.format(title = title, authors = authors, journal = journal, full_article_text = st.session_state['full_article_text'])
+                
+                # set up memory
+                msgs = StreamlitChatMessageHistory(key = "langchain_messages_pubmed")
+                memory = ConversationBufferMemory(chat_memory=msgs)
+                
+                initial_msg = f"Hi! Ask me anything about {st.session_state['selected_article']['title']}. I'm ready to help!"
+                if len(msgs.messages) == 0:
+                    msgs.add_ai_message(initial_msg)
+
+                prompt = PromptTemplate(input_variables=["history", "human_input"], template= formatted_pubmed_template)
+
+                # LLM chain with an OpenRouter base for the models
+                llm_chain =LLMChain(llm= ChatOpenAI(base_url="https://openrouter.ai/api/v1", api_key=st.secrets["OpenRouter_API_Key"], model=st.session_state['model_version_knowledge']), prompt=prompt, memory=memory)
+                
+                
+                if st.session_state['model_version_knowledge'] == "Please choose a model":
+                    st.info("Please choose a model to proceed")
+                else:
+                    for msg in msgs.messages:
+                        st.chat_message(msg.type).write(msg.content)
+                    if prompt := st.chat_input():
+                        st.chat_message("User").write(prompt)
+                        with st.spinner("Generating response..."):
+                            response = llm_chain.run(prompt)
+                        st.session_state.last_response = response
+                        st.chat_message("AI").write(response)
+            
+        #################################### AI-Enhanced PubMed tab Streamlit interface ####################################
+
+        if 'LLM_Invoked' not in st.session_state:
+    
+            # Empty placeholders
+            pubmed_title = st.empty()
+            pubmed_expander = st.empty()
+            pubmed_query = st.empty()
+            search_button = st.empty() 
+
+
+            pubmed_title.title('AI-Enhanced PubMed: Query and Understand with LLMs')
+
+            with pubmed_expander.expander("⚠️ Important Notice on Usage"):
+                    st.write("""
+            **Important Notice on Usage:** Please be aware that while our PubMed Retrieval Tool strives to provide accurate and
+            comprehensive information, it depends on emerging technologies and data extraction methods that
+            may be subject to inaccuracies. We diligently work to confirm and validate the content retrieved,
+            but complete accuracy of the information cannot be guaranteed. Users are encouraged to conduct additional research
+            and verification before making critical decisions based on the information provided by this tool.
+                            """)
+
+            # Tool parameters 
+            date_today = datetime.date.today()
+            default_min_date = datetime.date(year=2015, month=1, day=1)
+            query = pubmed_query.text_input("Enter your search term:", "")
+            max_results = st.sidebar.number_input("Number of results:", min_value=1, max_value=100, value=10)
+            min_date = st.sidebar.date_input("Select minimum date:", default_min_date)
+            max_date = st.sidebar.date_input("Select maximum date:", date_today)
+
+            # Rest tool button 
+            if st.sidebar.button("Reset Tool"):
+                clear_session_state_except_password()
+                st.rerun()
+
+            if search_button.button("Search"):
+                st.session_state['pubmed_search_button'] = True
+
+            if 'pubmed_search_button' in st.session_state:
+                if query == "":
+                    st.warning("Please enter a query in the search bar")
+                else:
+                    with st.spinner("Generating results🔎"):
+                        pmids = search_pubmed(query, max_results, min_date, max_date)
+                        if pmids:
+                            xml_data = fetch_article_details_with_abstracts(pmids)
+                            if xml_data:
+                                articles = parse_article_details(xml_data)
+                                display_articles(articles)
+                            else:
+                                st.write("Failed to fetch article details.")
                         else:
-                            st.write("Failed to fetch article details.")
-                    else:
-                        st.write("No articles found.")
+                            st.write("No articles found.")
+
+        else:
+            LLM_interaction()
