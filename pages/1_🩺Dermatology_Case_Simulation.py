@@ -31,6 +31,8 @@ st.set_page_config(
 #                 }
 #         </style>
 #         """, unsafe_allow_html=True)
+
+
 st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
 # check if authenticated is in session state
@@ -217,7 +219,7 @@ Information about the Condition and Performance Feedback:
         with st.expander("Model and Feedback Settings",expanded=st.session_state["model_feedback_expanded"]):
             col1, col2 = st.columns(2)
             with col1:
-                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo-2024-04-09"])
+                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo-2024-04-09", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
             with col2:
                 feedback = st.radio(
                     "Select feedback options:",
@@ -354,7 +356,11 @@ Information about the Condition and Performance Feedback:
         formatted_Patient_template = template.format(condition = condition, type = type)
         # prompt the llm and send
         prompt = PromptTemplate(input_variables=["history", "human_input"], template= formatted_Patient_template)
-        llm_chain = LLMChain(llm=ChatOpenAI(openai_api_key = OPENAI_API_KEY, model = model_version), prompt=prompt, memory=memory)
+
+        if model_version in ["meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"]:
+            llm_chain =LLMChain(llm= ChatOpenAI(base_url="https://openrouter.ai/api/v1", api_key=st.secrets["OpenRouter_API_Key"], model=model_version), prompt=prompt, memory=memory)
+        else:
+            llm_chain = LLMChain(llm=ChatOpenAI(openai_api_key = OPENAI_API_KEY, model = model_version), prompt=prompt, memory=memory)
 
         if model_version == "Please choose a model" and feedback is not None:
             st.info("Please choose a model and feedback option to proceed")
