@@ -220,7 +220,7 @@ Information about the Condition and Performance Feedback:
         with st.expander("Model and Feedback Settings",expanded=st.session_state["model_feedback_expanded"]):
             col1, col2 = st.columns(2)
             with col1:
-                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo-2024-04-09", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
+                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo", "gpt-4o", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
             with col2:
                 feedback = st.radio(
                     "Select feedback options:",
@@ -315,7 +315,7 @@ Information about the Condition and Performance Feedback:
                 st.session_state['Doctor_name'] = True
 
     ######################### summary button invoke ###########################
-    if st.sidebar.button('Generate Summary Report'):
+    if st.sidebar.button('Generate Summary Report',use_container_width=True):
         st.session_state["case_created"] = False
         with st.spinner("Generating Report"):
             report_md = generate_summary_with_llm(st.session_state['message_history'])

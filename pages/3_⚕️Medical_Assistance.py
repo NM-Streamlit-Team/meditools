@@ -44,7 +44,7 @@ if st.session_state['authenticated']:
                             """)
 
         # Dropdown menu for model selection
-        model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-2024-04-09"])
+        model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o"])
     with col2:
         st.image("images/nova_image.png", width=250)
                 

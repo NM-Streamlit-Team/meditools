@@ -172,7 +172,7 @@ if st.session_state['authenticated']:
                                 data = url_loader.load() # load the webpage data
 
                                 # Run the summarize chain (ON GPT-3.5-turbo)
-                                llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo', openai_api_key=OPENAI_API_KEY)
+                                llm = ChatOpenAI(temperature=0, model='gpt-4o', openai_api_key=OPENAI_API_KEY)
                                 chain = load_summarize_chain(llm, chain_type="map_reduce")
                                 summary = chain.run(data)
                                 
