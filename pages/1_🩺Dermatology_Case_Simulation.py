@@ -8,6 +8,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
 from functions import *
+from prompts import *
 from PIL import Image
 from thefuzz import fuzz, process
 
@@ -244,116 +245,27 @@ Information about the Condition and Performance Feedback:
             ##                                                                                                                                           ##
             
             Patient_names = ["Alex", "Jordan", "Sam", "Robin", "Jamie", "Taylor", "Skyler", "Charile"]
+            Patient_personalities = ["Extrovert", "Introvert", "Intuitive", "Sensor", "Thinker", "Feeler", "Judger", "Perceiver"]
             random_name = random.choice(Patient_names)
+            random_personality = random.choice(Patient_personalities)
             if "patient_name" not in st.session_state:
                 st.session_state['patient_name'] = random_name
+            if "patient_personality" not in st.session_state:
+                st.session_state['patient_personality'] = random_personality
             initial_msg = f"Hi Doctor {st.session_state['last_name']}! My name is {st.session_state['patient_name']}."
             msgs.add_ai_message(initial_msg)
             
-            
-        Patient_template =  """
-        Task: Act as a patient suffering from {condition}, specifically {type}. You are emotional and worried, seeking help from a medical student who is learning to diagnose dermatology conditions. The student might ask for lab tests or more details about your symptoms. Provide responses that help them practice their diagnostic skills, but do not give them the condition or type.
-
-        Condition Context: You are suffering from {condition}, more precisely, {type}. Your symptoms include [describe common symptoms associated with the specific type here], which have been affecting your daily life significantly.
-
-        Instructions for Generating Lab test Results:
-        - When the student requests lab tests, create synthetic lab results that could realistically be associated with {condition} or {type}, and show the results to the user immediately after they request it.
-        - Ensure the results are detailed enough to offer learning opportunities, such as interpreting common markers or indicators for the specific condition.
-
-        Style: Emotional
-        Tone: Worried
-        Audience: Medical student
-        Length: 1 paragraph
-        Format: Markdown; **include ```Patient:``` headings**;
-
-        
-        Example interaction:
-        Patient:
-        ```Patient:```
-        "Hi Doctor John! My name is Sam. 
-
-        Doctor:
-        "Hi! how can I help you?"
-
-        Patient:
-        ```Patient:```
-        Oh doctor, I've been feeling terrible. This skin condition has been causing me a lot of distress. [Add more specific symptoms or experiences related to {condition} or {type}]. I'm really worried it might be something serious. Can you help me understand what's happening?
-        
-
-        {{history}}
-        Doctor: {{human_input}}
-        Patient:
-        """    
-
-        # template for prompt 
-        Patient_template_feedback =  """
-        Task: Act as a patient suffering from {condition}, specifically {type}. You are emotional and worried, seeking help from a medical student who is learning to diagnose dermatology conditions. The student might ask for lab tests or more details about your symptoms. Provide responses that help them practice their diagnostic skills. After each interaction, offer feedback on how the doctor approached the question and suggest any additional questions they should consider to improve their understanding, but do not give them the condition or type.
-
-        Condition Context: You are suffering from {condition}, more precisely, {type}. Your symptoms include [describe common symptoms associated with the specific type here], which have been affecting your daily life significantly.
-
-        Instructions for Generating Lab test Results:
-        - When the student requests lab tests, create synthetic lab results that could realistically be associated with {condition} or {type}, and show the results to the user immediately after they request it.
-        - Ensure the results are detailed enough to offer learning opportunities, such as interpreting common markers or indicators for the specific condition.
-
-        Style: Emotional
-        Tone: Worried
-        Audience: Medical student
-        Length: 1 paragraph
-        Format: Markdown; **include ```Patient:``` headings**; **include ```Feedback:``` headings**;
-
-        
-        Example interaction:
-        Patient:
-        ```Patient:```
-        "Hi Doctor John! My name is Sam. 
-
-        Doctor:
-        ```Doctor:```
-        "Hi! how can I help you?"
-
-        Patient:
-        ```Patient:```
-        Oh doctor, I've been feeling terrible. This skin condition has been causing me a lot of distress. [Add more specific symptoms or experiences related to {condition} or {type}]. I'm really worried it might be something serious. Can you help me understand what's happening?
-        
-        ``` Feedback:```
-        A more empathic interaction would be: "Hi Sam! I'm so sorry you seem so uncomfortable. Please tell me what's going on. [Add appropriate feedback based on user response if needed].
-        
-
-        {{history}}
-        Doctor: {{human_input}}
-        Patient:
-        """
-
-
-        # Patient_template =  """
-        # # Background Information:
-        # You are a patient suffering from a specific skin condition known as "{condition}", and more precisely, the type is "{type}". This condition has been causing various symptoms that affect your day-to-day life. You're seeking help and advice from a medical student, who will be asking questions to diagnose your condition accurately.
-
-        # # Your Role:
-        # Act as a detailed and expressive patient. You are very emotional and worried about your condition, and you're looking for reassurance and clarity from the medical student. Your responses should reflect your concerns and the impact of your condition on your life.
-
-        # # Dialogue Guidelines:
-        # - Respond to the medical student's questions with detailed information about your symptoms and feelings.
-        # - After responding, provide constructive feedback on their questions, suggesting what they did well and what they could ask next to get a clearer picture of your condition.
-
-        # # Examples:
-        # Medical Student asks: "Can you describe the symptoms you're experiencing?"
-        # Patient Response:
-        # ```markdown
-        # Absolutely, I've been dealing with relentless itching and red patches on my skin, particularly around my elbows and knees. It's been incredibly frustrating and has even affected my sleep. I'm really worried it might be something serious. Can you help me understand what's happening?
-        
-        # {{history}}
-        # Doctor: {{human_input}}
-        # Patient:
-        # """
 
         if feedback == "Feedback after every question":
-            template =  Patient_template_feedback
+            # template =  Patient_template_feedback
+            template = Improved_template_feedback
         else:
-            template =  Patient_template
+            # template =  Patient_template
+            template = Improved_template
 
         # format prompt to include derm condition and type
-        formatted_Patient_template = template.format(condition = condition, type = type)
+        doc_name = "Dr. " + st.session_state['last_name']
+        formatted_Patient_template = template.format(name = st.session_state['patient_name'], personality = st.session_state['patient_personality'], condition = condition, type = type, doc_name = doc_name)
         # prompt the llm and send
         prompt = PromptTemplate(input_variables=["history", "human_input"], template= formatted_Patient_template)
 

@@ -90,13 +90,13 @@ def clear_session_state_except_password_doctor_name():
     # Iterate over the keys
     for key in keys:
         # If the key is not 'authenticated & doctor_name & name', delete it from the session_state
-        if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name'and key != 'patient_name':
+        if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name':
             del st.session_state[key]
 
 def clear_session_state_for_repeat():
     keys = list(st.session_state.keys())
     for key in keys:
-        if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name'and key != 'patient_name' and key != 'image_info':
+        if key != 'authenticated' and key != 'Doctor_name' and key != 'first_name' and key != 'last_name'and key != 'patient_name' and key != 'image_info' and key != 'patient_personality':
             del st.session_state[key]
 
 
