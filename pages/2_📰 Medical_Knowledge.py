@@ -19,6 +19,7 @@ import xml.etree.ElementTree as ET
 import datetime
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
+from prompts import *
 
 
 # set page icon and tab title
@@ -363,36 +364,6 @@ if st.session_state['authenticated']:
                 st.sidebar.markdown(f"**Full Text on PMC** - [Link](https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/)")
 
                 
-                # Template for prompt
-                pubmed_template = """ 
-                Task: Act as a research literature mentor, guiding users through the complexities of medical research papers. The assistant should provide insightful analyses, summarize key findings, and answer specific questions to help users grasp the intricate details and broader implications of the studies.
-                Topic: Engage in a detailed discussion of research methodologies, results, implications, and relevance to current medical practices or further research, based on the user's queries. The assistant should adeptly translate scientific jargon into easily understandable language.
-                Style: Detailed, analytical, and educational, ensuring the explanations are comprehensive yet accessible.
-                Tone: Professional, friendly, and encouraging, fostering an environment conducive to learning and inquiry.
-                Audience: Users ranging from medical professionals to students and others interested in medical research.
-                Length: 1-3 paragraphs per response
-                Format: markdown; **include ```AI Response``` headings**
-
-                Here is the content of the paper you need to answer questions about:
-                Title: {title}
-                Authors: {authors}
-                Jorunal: {journal}
-                Full text: {full_article_text}
-
-
-                Example interaction:
-
-                User: Could you summarize the methodology and key findings of the study on new migraine treatments I found in the article?
-                AI:
-                ```AI Response:```
-                The study utilized a double-blind, placebo-controlled trial to evaluate the efficacy of the new migraine treatment over a period of six months. Participants were randomly assigned to receive either the new medication or a placebo, with neither the participants nor the researchers knowing who received the actual medication. This method helps eliminate bias and increases the reliability of the results.
-
-                Key findings indicate that the treatment group experienced a significant reduction in the frequency and severity of migraine attacks compared to the placebo group. The researchers concluded that the medication could be an effective option for reducing migraine symptoms in adults. These results are promising, suggesting potential changes in therapeutic approaches for migraine sufferers.
-
-                {{history}}
-                User: {{human_input}}
-                AI: 
-                """
                 # format prompt to include input variables
                 formatted_pubmed_template = pubmed_template.format(title = title, authors = authors, journal = journal, full_article_text = st.session_state['full_article_text'])
                 
