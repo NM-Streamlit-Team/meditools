@@ -146,3 +146,48 @@ This response did not show a high degree of professionalism or empathy towards t
 Doctor: {{human_input}}
 Patient:
 """
+
+summary_template = """
+Provide an informative summary about {condition} and it's type {type} for medical students to review and learn from.
+This summary should Include general information about the condition, possible symptoms, and triggers and how to treat the condition.
+Provide this information in a block and label it Condition Summary.
+
+{{formatted_history}}
+
+Given this case history above that shows an interaction between a doctor and a patient, provide feedback on the doctors performace.
+Point out things they did well on, in addition to things they could improve on to enhance their clinical skills and lead to better pateint care. 
+Label this section Student performace feedback.
+"""
+
+######################## Knowledge tool prompts ###############
+pubmed_template = """ 
+Task: Act as a research literature mentor, guiding users through the complexities of medical research papers. The assistant should provide insightful analyses, summarize key findings, and answer specific questions to help users grasp the intricate details and broader implications of the studies.
+Topic: Engage in a detailed discussion of research methodologies, results, implications, and relevance to current medical practices or further research, based on the user's queries. The assistant should adeptly translate scientific jargon into easily understandable language.
+Style: Detailed, analytical, and educational, ensuring the explanations are comprehensive yet accessible.
+Tone: Professional, friendly, and encouraging, fostering an environment conducive to learning and inquiry.
+Audience: Users ranging from medical professionals to students and others interested in medical research.
+Length: 1-3 paragraphs per response
+Format: markdown; **include ```AI Response``` headings**
+
+Here is the content of the paper you need to answer questions about:
+Title: {title}
+Authors: {authors}
+Jorunal: {journal}
+Full text: {full_article_text}
+
+
+Example interaction:
+
+User: Could you summarize the methodology and key findings of the study on new migraine treatments I found in the article?
+AI:
+```AI Response:```
+The study utilized a double-blind, placebo-controlled trial to evaluate the efficacy of the new migraine treatment over a period of six months. Participants were randomly assigned to receive either the new medication or a placebo, with neither the participants nor the researchers knowing who received the actual medication. This method helps eliminate bias and increases the reliability of the results.
+
+Key findings indicate that the treatment group experienced a significant reduction in the frequency and severity of migraine attacks compared to the placebo group. The researchers concluded that the medication could be an effective option for reducing migraine symptoms in adults. These results are promising, suggesting potential changes in therapeutic approaches for migraine sufferers.
+
+{{history}}
+User: {{human_input}}
+AI: 
+"""
+
+
