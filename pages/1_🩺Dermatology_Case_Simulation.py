@@ -89,17 +89,6 @@ if st.session_state['authenticated']:
 
         #print(formatted_history)
 
-        summary_template = """
-        Provide an informative summary about {condition} and it's type {type} for medical students to review and learn from.
-        This summary should Include general information about the condition, possible symptoms, and triggers and how to treat the condition.
-        Provide this information in a block and label it Condition Summary.
-
-       {{formatted_history}}
-
-        Given this case history above that shows an interaction between a doctor and a patient, provide feedback on the doctors performace.
-        Point out things they did well on, in addition to things they could improve on to enhance their clinical skills and lead to better pateint care. 
-        Label this section Student performace feedback.
-"""
         summary_template_formatted = summary_template.format(
                     condition = condition,
                     type = type,
@@ -206,33 +195,42 @@ Information about the Condition and Performance Feedback:
     with st.sidebar.expander("FOR TESTING: See Condition and Type"):
         st.write(f"{condition} / {type}")
 
-
-    if st.sidebar.button("Click to Delete Case & Create New One"):
-        st.session_state["case_created"] = False
-        clear_session_state_except_password_doctor_name()
-
     ################################################## Main code ##################################################
 
     def main():
         # Warning message and setup params while model not chosen:
-        if 'model_feedback_expanded' not in st.session_state:
-            st.session_state['model_feedback_expanded'] = True
-        with st.expander("Model and Feedback Settings",expanded=st.session_state["model_feedback_expanded"]):
-            col1, col2 = st.columns(2)
-            with col1:
-                model_version = st.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo", "gpt-4o", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
-            with col2:
-                feedback = st.radio(
+        st.sidebar.divider()
+        model_version = st.sidebar.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo", "gpt-4o", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
+        feedback = st.sidebar.radio(
                     "Select feedback options:",
                     ("Feedback at the end", "Feedback after every question"))
             
+        st.sidebar.divider()
+
+        # Delete current case and create new one button
+        if st.sidebar.button("Click to Delete Case & Create New One"):
+            st.session_state["case_created"] = False
+            clear_session_state_except_password_doctor_name()
+
+        # summary button invoke 
+        if st.sidebar.button('Generate Summary Report',use_container_width=True):
+            st.session_state["case_created"] = False
+            with st.spinner("Generating Report"):
+                report_md = generate_summary_with_llm(st.session_state['message_history'])
+                pdf = markdown_to_pdf(report_md)
+                st.download_button(label="Download PDF",
+                            data=pdf,
+                            file_name="dermatology_case_report.pdf",
+                            mime="application/pdf")
 
         # Show image at top of page, above the interaction window
         cond_img = Image.open(image_path)
-        resized_cond_img = cond_img.resize((700,400))
-        with st.expander("Patient Image",expanded=True):  
-            st.image(resized_cond_img) # Likely don't need resized anymore now that it's in a container
-        st.divider()
+        @st.experimental_dialog("Image condition", width="large")
+        def show_dialog():
+            st.image(cond_img)
+            if st.button("Close"):
+                st.rerun()
+
         # set up memory
         msgs = StreamlitChatMessageHistory(key = "langchain_messages_Derm")
         memory = ConversationBufferMemory(chat_memory=msgs)
@@ -279,7 +277,7 @@ Information about the Condition and Performance Feedback:
         else:
             st.session_state["model_feedback_expanded"] = False
             for msg in msgs.messages:
-                st.chat_message(msg.type, avatar="🤒").write(msg.content)
+                st.chat_message(msg.type, avatar="🧑‍⚕️" if msg.type == "human" else "🤒").write(msg.content)
 
             if prompt := st.chat_input():
                 st.chat_message("Doctor", avatar="🧑‍⚕️").write(prompt)
@@ -288,7 +286,15 @@ Information about the Condition and Performance Feedback:
                 st.session_state.last_response = response
                 st.chat_message("Patient", avatar="🤒").write(response)
 
-            st.button("I'M READY TO MAKE MY DIAGNOSIS",use_container_width=True, on_click=end_interact_callbck)
+            col3, col4 = st.columns(2)
+            with col3:
+                # display patient image in a dialog
+                if st.button("See patient Image", use_container_width=True):
+                    show_dialog()
+            with col4:
+                # Guess in a dialog pop up
+                if st.button("I'M READY TO MAKE MY DIAGNOSIS",use_container_width=True, on_click=end_interact_callbck):
+                    post_interact()
             
         st.session_state['message_history'] = msgs
         st.session_state['message_memory'] = memory
@@ -314,18 +320,8 @@ Information about the Condition and Performance Feedback:
                 doctor_name_placholder.empty()
                 st.session_state['Doctor_name'] = True
 
-    ######################### summary button invoke ###########################
-    if st.sidebar.button('Generate Summary Report',use_container_width=True):
-        st.session_state["case_created"] = False
-        with st.spinner("Generating Report"):
-            report_md = generate_summary_with_llm(st.session_state['message_history'])
-            pdf = markdown_to_pdf(report_md)
-            st.download_button(label="Download PDF",
-                        data=pdf,
-                        file_name="dermatology_case_report.pdf",
-                        mime="application/pdf")
-    
     ######################### post_interact() ###########################
+    @st.experimental_dialog("Guess the Diagnosis", width="large") 
     def post_interact():
         st.session_state["remove_guess_field"] = False
         st.session_state["case_created"] = False # Shuts down main interaction panel, NOTE: ADD A WAY TO GO BACK
@@ -373,32 +369,17 @@ Information about the Condition and Performance Feedback:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                repeat_scenario_button = st.button("Repeat the Previous Scenario",use_container_width=True, on_click=repeat_interact_callbck)
+                if st.button("Repeat the Previous Scenario",use_container_width=True, on_click=repeat_interact_callbck):
+                    clear_session_state_for_repeat()
+                    st.rerun()
             with col2:
-                get_feedback_button = st.button("Get Feedback",use_container_width=True,on_click=guess_text_callbck)
+                if st.button("Get Feedback",use_container_width=True,on_click=guess_text_callbck):
+                    st.session_state['feedback_after_guess'] = True
+                    st.rerun()
             with col3:
-                new_case_button = st.button("Generate a New Case",use_container_width=True,on_click=master_reset_callbck)
-                
-            # GENERATE SUMMARY REPORT / FEEDBACK
-            if get_feedback_button:
-                placeholder.empty()
-                # st.session_state["end_interact"] = False # this makes get me out button dissapear, but not the 3 column buttons
-                # st.session_state["case_created"] = False
-                with st.spinner("Generating Report"): # SLOW - FIND WAY TO STORE IF ALREADY GENERATED
-                    report_md = generate_summary_with_llm(st.session_state['message_history'])
-                    pdf = markdown_to_pdf(report_md)
-                    st.download_button(label="Download PDF",
-                                data=pdf,
-                                file_name="dermatology_case_report.pdf",
-                                mime="application/pdf")
-            
-            # RESET THE INTERACTION AND REPEAT THE SAME SCENARIO -> See Button Callback     
-            if repeat_scenario_button: 
-                placeholder.empty()
-                
-            # RESET THE INTERACTION AND CREATE A NEW CASE -> See Button Callback  
-            if new_case_button:
-                placeholder.empty()
+                if st.button("Generate a New Case",use_container_width=True,on_click=master_reset_callbck):
+                    clear_session_state_except_password_doctor_name()
+                    st.rerun()
                 
         
     ################### END post_interact() ################
@@ -406,8 +387,21 @@ Information about the Condition and Performance Feedback:
     if st.session_state["case_created"]:   
         main()
 
-    if st.session_state["end_interact"]:
-        post_interact()
+    if 'feedback_after_guess' not in st.session_state:
+        st.session_state['feedback_after_guess'] = False
+
+    elif st.session_state['feedback_after_guess']:
+        with st.spinner("Generating Report"): # SLOW - FIND WAY TO STORE IF ALREADY GENERATED
+            report_md = generate_summary_with_llm(st.session_state['message_history'])
+            pdf = markdown_to_pdf(report_md)
+            st.download_button(label="Download PDF",
+                        data=pdf,
+                        file_name="dermatology_case_report.pdf",
+                        mime="application/pdf")
+            
+    if st.sidebar.button("Rest Tool", use_container_width=True):
+        clear_session_state_except_password()
+        st.rerun()
                     
     
 
