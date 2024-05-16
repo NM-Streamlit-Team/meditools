@@ -208,20 +208,20 @@ Information about the Condition and Performance Feedback:
         st.sidebar.divider()
 
         # Delete current case and create new one button
-        if st.sidebar.button("Click to Delete Case & Create New One"):
+        if st.sidebar.button("Click to Delete Case & Create New One", use_container_width=True):
             st.session_state["case_created"] = False
             clear_session_state_except_password_doctor_name()
 
         # summary button invoke 
-        if st.sidebar.button('Generate Summary Report',use_container_width=True):
-            st.session_state["case_created"] = False
-            with st.spinner("Generating Report"):
-                report_md = generate_summary_with_llm(st.session_state['message_history'])
-                pdf = markdown_to_pdf(report_md)
-                st.download_button(label="Download PDF",
-                            data=pdf,
-                            file_name="dermatology_case_report.pdf",
-                            mime="application/pdf")
+        # if st.sidebar.button('Generate Summary Report',use_container_width=True):
+        #     st.session_state["case_created"] = False
+        #     with st.spinner("Generating Report"):
+        #         report_md = generate_summary_with_llm(st.session_state['message_history'])
+        #         pdf = markdown_to_pdf(report_md)
+        #         st.download_button(label="Download PDF",
+        #                     data=pdf,
+        #                     file_name="dermatology_case_report.pdf",
+        #                     mime="application/pdf")
 
         # Show image at top of page, above the interaction window
         cond_img = Image.open(image_path)
@@ -289,7 +289,7 @@ Information about the Condition and Performance Feedback:
             col3, col4 = st.columns(2)
             with col3:
                 # display patient image in a dialog
-                if st.button("See patient Image", use_container_width=True):
+                if st.button("SEE PATIENT IMAGE", use_container_width=True):
                     show_dialog()
             with col4:
                 # Guess in a dialog pop up
@@ -324,19 +324,23 @@ Information about the Condition and Performance Feedback:
     @st.experimental_dialog("Guess the Diagnosis", width="large") 
     def post_interact():
         st.session_state["remove_guess_field"] = False
-        st.session_state["case_created"] = False # Shuts down main interaction panel, NOTE: ADD A WAY TO GO BACK
-          
-        user_guess = st.text_input(
-            "What condition do you think your patient was exhibiting? :mag:",
-            max_chars=50,
-            key="user_guess",
-            value=None,
-            help="Try to be as specific as possible. For example, writing 'Rhinophyma' instead of simply 'Rosacea'.",
-            disabled=st.session_state["remove_guess"]
-        )
+        #st.session_state["case_created"] = False # Shuts down main interaction panel, NOTE: ADD A WAY TO GO BACK
+        if 'first_guess_made' not in st.session_state:
+            user_guess = st.text_input(
+                "What condition do you think your patient was exhibiting? :mag:",
+                max_chars=50,
+                key="user_guess",
+                value=None,
+                help="Try to be as specific as possible. For example, writing 'Rhinophyma' instead of simply 'Rosacea'.",
+                disabled=st.session_state["remove_guess"]
+            )
+        else:
+            user_guess = st.session_state['guess']
         # fuzzy string matching
-        if user_guess:
-            
+        if st.button("Check Guess") or 'first_guess_made' in st.session_state:
+        # if user_guess:
+            st.session_state['first_guess_made'] = True
+            st.session_state['guess'] = user_guess
             cond_type = condition + " " + type
             tok_set_ratio = fuzz.token_set_ratio(cond_type, user_guess)
             # st.write("THE FUZZ RATIO IS: ", tok_set_ratio) # Comment out later, also consider using a non fuzzy approach
@@ -372,9 +376,10 @@ Information about the Condition and Performance Feedback:
                 if st.button("Repeat the Previous Scenario",use_container_width=True, on_click=repeat_interact_callbck):
                     clear_session_state_for_repeat()
                     st.rerun()
-            with col2:
-                if st.button("Get Feedback",use_container_width=True,on_click=guess_text_callbck):
+            with col2: 
+                if st.button("Generate Summary Report",use_container_width=True,on_click=guess_text_callbck):
                     st.session_state['feedback_after_guess'] = True
+                    st.session_state["case_created"] = False
                     st.rerun()
             with col3:
                 if st.button("Generate a New Case",use_container_width=True,on_click=master_reset_callbck):
@@ -399,7 +404,7 @@ Information about the Condition and Performance Feedback:
                         file_name="dermatology_case_report.pdf",
                         mime="application/pdf")
             
-    if st.sidebar.button("Rest Tool", use_container_width=True):
+    if st.sidebar.button("Reset Tool", use_container_width=True):
         clear_session_state_except_password()
         st.rerun()
                     
