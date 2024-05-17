@@ -404,11 +404,9 @@ Information about the Condition and Performance Feedback:
                         file_name="dermatology_case_report.pdf",
                         mime="application/pdf")
             
-    if st.sidebar.button("Reset Tool", use_container_width=True):
-        clear_session_state_except_password()
-        st.rerun()
+    st.sidebar.button("Reset Tool", use_container_width=True, on_click=clear_session_state_except_password)
+        # st.rerun()
                     
-    
 
 
         
