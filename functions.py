@@ -157,8 +157,12 @@ def end_interact_callbck():
     
 def master_reset_callbck():
     guess_text_callbck()
-    # clear_session_state_except_password_doctor_name()
+    clear_session_state_except_password_doctor_name()
     
 def repeat_interact_callbck():
     guess_text_callbck()
-    # clear_session_state_for_repeat()
+    clear_session_state_for_repeat()
+
+def close_guess_dialog():
+    st.session_state["case_created"] = False
+    

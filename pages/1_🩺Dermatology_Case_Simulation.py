@@ -208,9 +208,8 @@ Information about the Condition and Performance Feedback:
         st.sidebar.divider()
 
         # Delete current case and create new one button
-        if st.sidebar.button("Click to Delete Case & Create New One", use_container_width=True):
+        if st.sidebar.button("Click to Delete Case & Create New One", use_container_width=True, on_click=clear_session_state_except_password_doctor_name):
             st.session_state["case_created"] = False
-            clear_session_state_except_password_doctor_name()
 
         # summary button invoke 
         # if st.sidebar.button('Generate Summary Report',use_container_width=True):
@@ -373,16 +372,16 @@ Information about the Condition and Performance Feedback:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                if st.button("Repeat the Previous Scenario",use_container_width=True, on_click=repeat_interact_callbck):
+                if st.button("Repeat the Previous Scenario",use_container_width=True, on_click=guess_text_callbck):
                     clear_session_state_for_repeat()
                     st.rerun()
-            with col2: 
+            with col2:
                 if st.button("Generate Summary Report",use_container_width=True,on_click=guess_text_callbck):
                     st.session_state['feedback_after_guess'] = True
                     st.session_state["case_created"] = False
                     st.rerun()
             with col3:
-                if st.button("Generate a New Case",use_container_width=True,on_click=master_reset_callbck):
+                if st.button("Generate a New Case",use_container_width=True,on_click=guess_text_callbck):
                     clear_session_state_except_password_doctor_name()
                     st.rerun()
                 
@@ -404,9 +403,16 @@ Information about the Condition and Performance Feedback:
                         file_name="dermatology_case_report.pdf",
                         mime="application/pdf")
             
+            col_1, col_2 = st.columns(2)
+            with col_1:
+                st.button("Repeat the Previous Scenario",use_container_width=True, on_click=repeat_interact_callbck)
+                    #clear_session_state_for_repeat()
+                    #st.rerun()
+            with col_2:
+                st.button("Generate a New Case",use_container_width=True,on_click=master_reset_callbck)
+                        #clear_session_state_except_password_doctor_name()
+                        #st.rerun()
+            
+
     st.sidebar.button("Reset Tool", use_container_width=True, on_click=clear_session_state_except_password)
         # st.rerun()
-                    
-
-
-        
