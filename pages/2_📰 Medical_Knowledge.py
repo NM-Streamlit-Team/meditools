@@ -20,6 +20,7 @@ import datetime
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
 from prompts import *
+import random
 
 
 # set page icon and tab title
@@ -29,7 +30,7 @@ st.set_page_config(
     )
 
 # Make page content larger (zoom)
-st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
+st.markdown("""<style>body {zoom: 1.2;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
 
 # DEFINITIONS
@@ -392,6 +393,20 @@ if st.session_state['authenticated']:
                             response = llm_chain.run(prompt)
                         st.session_state.last_response = response
                         st.chat_message("AI").write(response)
+
+                        # Text to speech setup
+                        client = OpenAI()
+                        with st.spinner("Converting response to speech..."):
+                            try:
+                                speech = client.audio.speech.create(
+                                    model="tts-1-hd",
+                                    voice="nova",
+                                    input=response
+                                )
+                                binary_content = speech.content
+                                autoplay_audio(binary_content)
+                            except Exception as e:
+                                st.error(f"Failed to convert text to speech: {e} ")
             
         #################################### AI-Enhanced PubMed tab Streamlit interface ####################################
 
