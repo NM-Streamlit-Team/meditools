@@ -11,6 +11,8 @@ from functions import *
 from prompts import *
 from PIL import Image
 from thefuzz import fuzz, process
+from openai import OpenAI
+from streamlit_mic_recorder import mic_recorder
 
 
 
@@ -34,7 +36,9 @@ st.set_page_config(
 #         """, unsafe_allow_html=True)
 
 
-st.markdown("""<style>body {zoom: 1.5;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
+st.markdown("""<style>body {zoom: 1.2;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
+
+client = OpenAI()
 
 # check if authenticated is in session state
 if 'authenticated' not in st.session_state:
@@ -198,6 +202,14 @@ Information about the Condition and Performance Feedback:
     ################################################## Main code ##################################################
 
     def main():
+
+        # speech client
+        speech_client = OpenAI()
+
+        # lab results 
+        if 'lab_results' not in st.session_state:
+                st.session_state['lab_results'] = None
+
         # Warning message and setup params while model not chosen:
         st.sidebar.divider()
         model_version = st.sidebar.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo", "gpt-4o", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
@@ -252,6 +264,7 @@ Information about the Condition and Performance Feedback:
             initial_msg = f"Hi Doctor {st.session_state['last_name']}! My name is {st.session_state['patient_name']}."
             msgs.add_ai_message(initial_msg)
             
+            
 
         if feedback == "Feedback after every question":
             # template =  Patient_template_feedback
@@ -274,26 +287,86 @@ Information about the Condition and Performance Feedback:
         if model_version == "Please choose a model" and feedback is not None:
             st.info("Please choose a model and feedback option to proceed")
         else:
+
             st.session_state["model_feedback_expanded"] = False
             for msg in msgs.messages:
                 st.chat_message(msg.type, avatar="🧑‍⚕️" if msg.type == "human" else "🤒").write(msg.content)
+                
+            # check if audio in session state 
+            if 'audio' not in st.session_state:
+                st.session_state['audio'] = None
+            
+            prompt = None
 
-            if prompt := st.chat_input():
+            # Allow users to enter text or record audio
+            text_input = st.chat_input()
+            if text_input:
+                prompt = text_input
+            elif st.session_state['audio'] is not None:
+                # transcribe audio using audio bytes and openai client (check functions.py)
+                prompt = transcribe_audio(st.session_state['audio']['bytes'], speech_client)
+                st.session_state['audio'] = None
+                
+            
+            if prompt:
                 st.chat_message("Doctor", avatar="🧑‍⚕️").write(prompt)
                 with st.spinner("Generating response..."):
                     response = llm_chain.run(prompt)
                 st.session_state.last_response = response
                 st.chat_message("Patient", avatar="🤒").write(response)
+                prompt = None
 
-            col3, col4 = st.columns(2)
+                # Text to speech setup
+                client = OpenAI()
+                with st.spinner("Converting response to speech..."):
+                    try:
+                        speech = client.audio.speech.create(
+                            model="tts-1-hd",
+                            voice= "nova",
+                            input=response
+                        )
+                        binary_content = speech.content
+                        autoplay_audio(binary_content)
+                    except Exception as e:
+                        st.error(f"Failed to convert text to speech: {e} ")
+
+
+            if st.session_state['lab_results'] is not None:
+                msgs.add_message(st.session_state['lab_results'])
+                st.session_state['lab_results'] = None
+                st.rerun()
+                
+            # speech to text button (using a streamlit component)
+            audio = mic_recorder(
+            start_prompt="START SPEAKING 🎤",
+            stop_prompt="STOP SPEAKING ⏹️",
+            just_once=True,
+            use_container_width=False,
+            format="webm",
+            callback=None,
+            args=(),
+            kwargs={},
+            key=None
+            )
+            # check if audio has been recorded
+            if audio:
+                st.session_state['audio'] = audio
+                audio = None
+                st.rerun()
+
+            col3, col4, col5 = st.columns(3)
             with col3:
                 # display patient image in a dialog
                 if st.button("SEE PATIENT IMAGE", use_container_width=True):
                     show_dialog()
             with col4:
+                if st.button("ORDER LAB TEST", use_container_width=True):
+                    lab_test()
+            with col5:
                 # Guess in a dialog pop up
-                if st.button("I'M READY TO MAKE MY DIAGNOSIS",use_container_width=True, on_click=end_interact_callbck):
+                if st.button("READY TO DIAGNOSE",use_container_width=True, on_click=end_interact_callbck):
                     post_interact()
+
             
         st.session_state['message_history'] = msgs
         st.session_state['message_memory'] = memory
@@ -319,7 +392,31 @@ Information about the Condition and Performance Feedback:
                 doctor_name_placholder.empty()
                 st.session_state['Doctor_name'] = True
 
-    ######################### post_interact() ###########################
+    ########################################################## lab_test() ##########################################################
+    
+    @st.experimental_dialog("Order a lab test for the patient 🧪", width="large") 
+    def lab_test():
+        lab_test = st.text_input("Enter the name of teh lab test you want to order? (You can be descriptive if you wish)")
+
+        if lab_test:
+            with st.spinner("Preparing Lab Results 🧪"):
+                # Format template
+                formatted_lab_template = lab_prompt.format(lab_test = lab_test, condition = condition, type = type, patient_name = st.session_state['patient_name'])
+                lab_order_prompt = PromptTemplate.from_template(formatted_lab_template)
+
+                # setup an LLM 
+                llm = ChatOpenAI(openai_api_key = OPENAI_API_KEY, model = "gpt-4")
+                llm_Lab = lab_order_prompt | llm 
+                # get lab results form LLM
+                lab_results = llm_Lab.invoke(lab_test)
+
+
+                st.session_state['lab_results'] = lab_results
+            st.rerun()
+
+
+    ########################################################## post_interact() ##########################################################
+    
     @st.experimental_dialog("Guess the Diagnosis", width="large") 
     def post_interact():
         st.session_state["remove_guess_field"] = False
