@@ -3,6 +3,8 @@ import base64
 import time
 import markdown
 import pdfkit
+import os
+# import speech_recognition as sr
 
 # function to remove first two words from a string
 def remove_first_two_words(text: str) -> str:
@@ -26,6 +28,20 @@ def autoplay_audio(binary_content: bytes):
         </audio>
         """
     st.markdown(md, unsafe_allow_html=True)
+
+
+# Function to transcribe audio file
+def transcribe_audio(audio_bytes, client):
+    audio_file_path = "temp_audio_file.webm"
+    with open(audio_file_path, "wb") as audio_file:
+        audio_file.write(audio_bytes)
+    with open(audio_file_path, "rb") as audio_file:
+        transcription = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
+        os.remove(audio_file_path)
+    return transcription.text
 
 
 # function to authenticate user
