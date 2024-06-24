@@ -1,1 +1,15 @@
-**TESTING APP ACCESS:** https://meditools.streamlit.app/
+# MediTools 
+
+[![forthebadge](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNzYuNjk0NDQyNzQ5MDIzNDQiIGhlaWdodD0iMzUiIHZpZXdCb3g9IjAgMCAxNzYuNjk0NDQyNzQ5MDIzNDQgMzUiPjxyZWN0IHdpZHRoPSIxMTIuNjk0NDQyNzQ5MDIzNDQiIGhlaWdodD0iMzUiIGZpbGw9IiMyMDk2OTYiLz48cmVjdCB4PSIxMTIuNjk0NDQyNzQ5MDIzNDQiIHdpZHRoPSI2NCIgaGVpZ2h0PSIzNSIgZmlsbD0iI2ZmZmZmZiIvPjx0ZXh0IHg9IjU2LjM0NzIyMTM3NDUxMTcyIiB5PSIyMS41IiBmb250LXNpemU9IjEyIiBmb250LWZhbWlseT0iJ1JvYm90bycsIHNhbnMtc2VyaWYiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIyIj5QT1dFUkVEIEJZPC90ZXh0Pjx0ZXh0IHg9IjE0NC42OTQ0NDI3NDkwMjM0NCIgeT0iMjEuNSIgZm9udC1zaXplPSIxMiIgZm9udC1mYW1pbHk9IidNb250c2VycmF0Jywgc2Fucy1zZXJpZiIgZmlsbD0iIzIwOTY5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9IjkwMCIgbGV0dGVyLXNwYWNpbmc9IjIiPkxMTVM8L3RleHQ+PC9zdmc+)](https://forthebadge.com)
+
+<p>Meditools is an application designed to provide interactive learning experiences and up-to-date medical information, making it easier for medical professionals and students to enhance their knowledge and skills.</p>
+
+### We currently have 2 tools:
+1.  Dermatology Case Simulation Tool
+2.  Medical Knowledge Tool
+    - AI-Enhanced PubMed: Query and Understand with LLMs
+    - Google News Retrieval
+
+# 🌐Links
+
+[Application - meditools.streamlit.app](https://meditools.streamlit.app/)
