@@ -196,8 +196,8 @@ Information about the Condition and Performance Feedback:
     # get image info 
     condition, type, image_path = st.session_state['image_info']
 
-    with st.sidebar.expander("FOR TESTING: See Condition and Type"):
-        st.write(f"{condition} / {type}")
+    # with st.sidebar.expander("FOR TESTING: See Condition and Type"): ## Comment out while published for testing
+    #     st.write(f"{condition} / {type}")
 
     ################################################## Main code ##################################################
 
