@@ -236,7 +236,7 @@ Information about the Condition and Performance Feedback:
 
         # Show image at top of page, above the interaction window
         cond_img = Image.open(image_path)
-        @st.experimental_dialog("Image condition", width="large")
+        @st.experimental_dialog("Patient Image", width="large")
         def show_dialog():
             st.image(cond_img)
             if st.button("Close"):
@@ -396,7 +396,7 @@ Information about the Condition and Performance Feedback:
     
     @st.experimental_dialog("Order a lab test for the patient 🧪", width="large") 
     def lab_test():
-        lab_test = st.text_input("Enter the name of teh lab test you want to order? (You can be descriptive if you wish)")
+        lab_test = st.text_input("Enter the name of the lab test you want to order? (You can be descriptive if you wish)")
 
         if lab_test:
             with st.spinner("Preparing Lab Results 🧪"):
