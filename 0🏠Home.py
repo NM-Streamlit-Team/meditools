@@ -7,7 +7,7 @@ from sendgrid.helpers.mail import Mail, Email, To, TemplateId, Personalization
 
 
 st.set_page_config(page_title='MediTools', layout = 'centered', page_icon = ':stethoscope:', initial_sidebar_state = 'auto')
-st.markdown("""<style>body {zoom: 1.2;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
+#st.markdown("""<style>body {zoom: 1.2;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
 # video path from dropbox
 video_path = "https://dl.dropboxusercontent.com/scl/fi/gy9w12c85ivtg9itbimg3/MediTools.mp4?rlkey=di01s1pmjzzhdzycqjzpbvpup&st=d4zfq6m8&dl=0"

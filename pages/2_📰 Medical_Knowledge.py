@@ -30,7 +30,7 @@ st.set_page_config(
     )
 
 # Make page content larger (zoom)
-st.markdown("""<style>body {zoom: 1.2;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
+#st.markdown("""<style>body {zoom: 1.2;  /* Adjust this value as needed */}</style>""", unsafe_allow_html=True)
 
 
 # DEFINITIONS
