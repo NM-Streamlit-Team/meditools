@@ -1,24 +1,29 @@
-<h1 align="center">MediTools - Medical Education Powered by LLMs🩺🤖</h1>
+<h1 align="center">🩺🤖 MediTools - Medical Education Powered by LLMs</h1>
 
-<p align="left">
-✨ Meditools is an application designed to provide interactive learning experiences and up-to-date medical information, making it easier for medical professionals and students to enhance their knowledge and skills.
+<p align="center" style="font-size: 1.2em;">
+✨ Meditools provides interactive learning experiences and up-to-date medical information, helping medical professionals and students enhance their knowledge and skills.
 </p>
+
+<hr style="width: 60%; margin: auto;">
+
 <p align="center">
-  <img src="https://img.shields.io/badge/Powered%20by-LLMs-maroon?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/python-3.10.12-blue.svg?style=for-the-badge"/>
-  <img src="https://img.shields.io/github/contributors/NM-Streamlit-Team/meditools?style=for-the-badge"/>
-  <img src="https://img.shields.io/github/last-commit/NM-Streamlit-Team/meditools?style=for-the-badge"/>
-  <img src="https://img.shields.io/github/issues/NM-Streamlit-Team/meditools?style=for-the-badge"/>
-  <img src="https://img.shields.io/github/stars/NM-Streamlit-Team/meditools?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Powered%20by-LLMs-maroon?style=for-the-badge&logo=OpenAI&logoColor=white" alt="Powered by LLMs"/>
+  <img src="https://img.shields.io/badge/Python-3.10.12-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"/>
+  <img src="https://img.shields.io/github/stars/NM-Streamlit-Team/meditools?style=for-the-badge&color=gold&logo=github&logoColor=white" alt="GitHub Stars"/>
+  <img src="https://img.shields.io/github/last-commit/NM-Streamlit-Team/meditools?style=for-the-badge&color=pink&logo=git&logoColor=white" alt="Last Commit"/>
+  <img src="https://img.shields.io/github/issues/NM-Streamlit-Team/meditools?style=for-the-badge&color=tan&logo=github&logoColor=white" alt="GitHub Issues"/>
+  <img src="https://img.shields.io/github/contributors/NM-Streamlit-Team/meditools?style=for-the-badge&color=salmon&logo=github&logoColor=white" alt="GitHub Contributors"/>
 </p>
-
-<video controls src="./images/video/MediTools Ad.mp4" title="Title"></video>
 
 <p align="center">
   <a href="https://www.dropbox.com/scl/fi/5tee7568ret1gvvuqedo7/MediTools-Ad.mp4?rlkey=bbofnzvaqdue2tkup47dd4sex&st=i536xucw&dl=0">
-    <img src="https://img.shields.io/badge/ ▶️ Watch%20Full%20Video%20with%20Audio-maroon?style=for-the-badge" alt="Watch Full Video with Audio"/>
+    <img src="https://www.dropbox.com/scl/fi/6johpso2rpzmrxc6e85ow/play_readme.png?rlkey=7f2jmr9ratwoo8euiuqh28qt2&st=d42n2vvz&raw=1" alt="Watch MediTools Promo Video" width="600"/>
   </a>
 </p>
+
+<br/>
+
+
 
 ## 🛠 Tools Available
 
