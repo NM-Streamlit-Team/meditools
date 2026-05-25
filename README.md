@@ -106,7 +106,7 @@ password = "your_secure_application_password"
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/amralshatnawi/meditools.git
+git clone https://github.com/NM-Streamlit-Team/meditools.git
 cd meditools
 ```
 
