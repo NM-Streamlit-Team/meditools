@@ -129,7 +129,7 @@ Populate secrets.toml with the required API keys and configuration values.
 ### 4. Run the application
 
 ```bash 
-streamlit run app.py
+streamlit run 0🏠Home.py
 ```
 ---
 
