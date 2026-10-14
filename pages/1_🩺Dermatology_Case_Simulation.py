@@ -212,7 +212,7 @@ Information about the Condition and Performance Feedback:
 
         # Warning message and setup params while model not chosen:
         #st.sidebar.divider()
-        model_version = st.sidebar.selectbox("Choose GPT Model", ["Please choose a model", "gpt-3.5-turbo", "gpt-4","gpt-4-turbo", "gpt-4o", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
+        model_version = st.sidebar.selectbox("Choose GPT Model", ["Please choose a model", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o", "meta-llama/llama-3-8b-instruct", "meta-llama/llama-3-70b-instruct", "anthropic/claude-3-haiku"])
         feedback = st.sidebar.radio(
                     "Select feedback options:",
                     ("Feedback at the end", "Feedback after every question"))
