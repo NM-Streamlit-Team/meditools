@@ -2,8 +2,9 @@ import streamlit as st
 import base64
 import time
 import markdown
-import pdfkit
 import os
+from io import BytesIO
+from xhtml2pdf import pisa
 # import speech_recognition as sr
 
 # function to remove first two words from a string
@@ -124,11 +125,13 @@ def image_to_base64(image_path):
 def markdown_to_pdf(markdown_text):
     # Convert Markdown to HTML
     html_text = markdown.markdown(markdown_text)
-    
-    # Convert HTML to PDF
-    pdf = pdfkit.from_string(html_text, False)
-    
-    return pdf
+
+    pdf_output = BytesIO()
+    result = pisa.CreatePDF(html_text, dest=pdf_output, encoding="utf-8")
+    if result.err:
+        raise RuntimeError("Failed to generate PDF report")
+
+    return pdf_output.getvalue()
 
 
 def divide_news_topics(parent_dict, limit):
